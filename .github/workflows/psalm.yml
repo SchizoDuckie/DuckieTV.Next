@@ -51,7 +51,7 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Psalm Security Scan
-        uses: psalm/psalm-github-security-scan@f3e6fd9432bc3e44aec078572677ce9d2ef9c287
+        run: ./vendor/bin/psalm --report=results.sarif
 
       - name: Upload Security Analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v4
