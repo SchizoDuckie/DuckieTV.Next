@@ -1,5 +1,5 @@
 <div class="leftpanel">
-    <button type="button" class="close" onclick="SidePanel.close()" title="Close Settings">&times;</button>
+    <button type="button" class="close" onclick="window.SidePanel.hide()" title="Close Settings">&times;</button>
     <h2 style="margin-bottom:3px">
         <i class="glyphicon glyphicon-cog" style="top:4px;margin-right:2px"></i> <strong>SETTINGS</strong>
     </h2>

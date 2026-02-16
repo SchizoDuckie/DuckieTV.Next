@@ -8,125 +8,148 @@
     Matched to original DuckieTV-angular templates/sidepanel/episode-details.html
 --}}
 <div class="serie-bg-img" style="background-image: url('{{ $serie->poster }}');"></div>
-<button type="button" class="close" onclick="SidePanel.hide()" title="{{ __('COMMON/close/btn') }} {{ $serie->name }} - {{ $episode->formatted_episode }}">&times;</button>
-
-@if($episode->filename)
+<div class="serie-overview">
+  <button type="button" class="close" data-sidepanel-show="{{ route('series.show', $serie->id) }}" title="{{ __('Close') }} {{ $serie->name }}{{ $episode->formatted_episode ? ' - ' : '' }}{{ $episode->formatted_episode }}" data-toggle="tooltip" data-placement="left">&times;</button>
+  
+  @if($episode->filename)
     <div class="episode-img large" style="background-image: url('{{ $episode->filename }}');"></div>
-@endif
-
-@if(!$episode->filename)
+  @else
     <center>
-        {{-- Fallback if no episode image (using series poster as header style) --}}
         <img src="{{ $serie->poster }}" style="margin:0 auto; max-width: 150px; display: block; box-shadow: 0px 0px 10px rgba(0,0,0,0.5);">
     </center>
-@endif
+  @endif
 
-<h2>
-    <span>{{ $serie->name }} - {{ $episode->formatted_episode }}</span>
-</h2>
+  <h2>
+    <span>{{ $serie->name }}{{ $episode->formatted_episode ? ' - ' : '' }}{{ $episode->formatted_episode }}</span>
+  </h2>
 
-<h3>{{ $episode->episodename }}</h3>
-<h5 style="text-align: center;">{{ $episode->getAirDate() instanceof \Carbon\Carbon ? $episode->getAirDate()->format('F j, Y, g:i a') : 'Unknown' }}</h5>
-<p class="overview" style="text-align:justify">{{ $episode->overview }}</p>
+  <h3>{{ $episode->episodename }}</h3>
+  <h5 style="text-align: center;">{{ $episode->getFormattedAirDate() }}</h5>
+  <p class="overview" style="text-align:justify">{{ $episode->overview }}</p>
 
-<table class="buttons" width="100%" border="0">
-    {{-- Row 1: Series Details (full width) --}}
+  <table class="buttons" width="100%" border="0">
     <tr>
-        <td colspan="2">
-            <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.details', $serie->id) }}">
-                <i class="glyphicon glyphicon-info-sign"></i> <strong>{{ __('COMMON/series-details/lbl') }}</strong>
-            </a>
-        </td>
+      <td colspan="2">
+        <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.details', $serie->id) }}">
+            <i class="glyphicon glyphicon-info-sign"></i><strong>{{ __('Series Details') }}</strong>
+        </a>
+      </td>
     </tr>
-
-    {{-- Row 2: Seasons + Episodes (two-face) --}}
     <tr class="two-face">
-        <td>
-            <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.seasons', $serie->id) }}">
-                <i class="glyphicon glyphicon-th"></i> <strong>{{ __('COMMON/seasons/lbl') }}</strong>
+      <td>
+        <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.seasons', $serie->id) }}">
+            <i class="glyphicon glyphicon-info-sign"></i><strong>{{ __('Seasons') }}</strong>
+        </a>
+      </td>
+      <td>
+        <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.episodes', ['id' => $serie->id, 'season_id' => $episode->season_id]) }}">
+            <i class="glyphicon glyphicon-info-sign"></i><strong>{{ __('Episodes') }}</strong>
+        </a>
+      </td>
+    </tr>
+    <tr class="two-face">
+      <td>
+        @if($episode->hasAired() || $episode->isLeaked())
+             <a class="mark-button mark-downloaded-button" onclick="window.SidePanel.toggleEpisodeDownloaded({{ $episode->id }}, this)">
+              <table>
+                <tr>
+                  <td class="left-glyph">
+                    <i class="glyphicon glyphicon-floppy-{{ $episode->downloaded ? 'saved' : 'disk' }}" style="{{ $episode->downloaded ? 'color:green' : '' }}"></i>
+                  </td>
+                  <td class="right-text-glyph">
+                    <strong>{{ __('MARK AS') }}</strong>
+                    <i class="glyphicon glyphicon-floppy-{{ $episode->downloaded ? 'disk' : 'saved' }}"></i>
+                  </td>
+                </tr>
+              </table>
             </a>
-        </td>
-        <td>
-            <a href="javascript:void(0)" data-sidepanel-expand="{{ route('series.episodes', $serie->id) }}">
-                <i class="glyphicon glyphicon-list"></i> <strong>{{ __('COMMON/episodes/lbl') }}</strong>
+        @endif
+      </td>
+      <td>
+        @if($episode->hasAired() || $episode->isLeaked())
+             <a class="mark-button mark-watched-button" onclick="window.SidePanel.toggleEpisodeWatched({{ $episode->id }}, this)">
+              <table>
+                <tr>
+                  <td class="left-glyph">
+                     <i class="glyphicon glyphicon-eye-{{ $episode->watched ? 'open' : 'close' }}" style="{{ $episode->watched ? 'color:green' : '' }}"></i>
+                  </td>
+                  <td class="right-text-glyph">
+                    <strong>{{ __('MARK AS') }}</strong>
+                    <i class="glyphicon glyphicon-eye-{{ $episode->watched ? 'close' : 'open' }}"></i>
+                  </td>
+                </tr>
+              </table>
             </a>
+        @endif
+      </td>
+    </tr>
+    @if(!$episode->hasAired() && !$episode->isLeaked())
+    <tr>
+        <td colspan="2" class="buttons">
+             <a href="javascript:void(0)" onclick="window.SidePanel.toggleEpisodeLeaked({{ $episode->id }})">
+                <i class="glyphicon {{ $episode->isLeaked() ? 'glyphicon-ban-circle' : 'glyphicon-flash' }}"></i>
+                <strong>{{ $episode->isLeaked() ? __('UNMARK LEAKED') : __('MARK LEAKED') }}</strong>
+            </a>
+            <p style='font-weight:normal; text-align:center; padding-top:10px'>{{ $episode->getAirDate() instanceof \Carbon\Carbon ? $episode->getAirDate()->format('n/j/y') : '' }}</p>
         </td>
     </tr>
-
-    {{-- Row 3: Mark Downloaded + Mark Watched (two-face, only if aired) --}}
-    @if($episode->hasAired())
-        <tr class="two-face">
-            <td>
-                <a href="javascript:void(0)" onclick="document.getElementById('toggle-download-form').submit()">
-                    <i class="glyphicon {{ $episode->downloaded ? 'glyphicon-floppy-remove' : 'glyphicon-floppy-save' }}"></i>
-                    <strong>{{ $episode->downloaded ? __('UNMARK DOWNLOADED') : __('MARK DOWNLOADED') }}</strong>
-                    <form id="toggle-download-form" method="POST" action="{{ route('episodes.update', $episode->id) }}" style="display:none;">@csrf @method('PATCH')<input type="hidden" name="action" value="toggle_download"></form>
-                </a>
-            </td>
-            <td>
-                <a href="javascript:void(0)" onclick="document.getElementById('toggle-watched-form').submit()">
-                    <i class="glyphicon {{ $episode->watched ? 'glyphicon-eye-close' : 'glyphicon-eye-open' }}"></i>
-                    <strong>{{ $episode->watched ? __('UNMARK WATCHED') : __('MARK WATCHED') }}</strong>
-                    <form id="toggle-watched-form" method="POST" action="{{ route('episodes.update', $episode->id) }}" style="display:none;">@csrf @method('PATCH')<input type="hidden" name="action" value="toggle_watched"></form>
-                </a>
-            </td>
-        </tr>
     @endif
-
-    @if(!$episode->hasAired() || $episode->isLeaked())
-        <tr>
-            <td colspan="2" class="buttons">
-                <a href="javascript:void(0)" onclick="document.getElementById('toggle-leaked-form').submit()">
-                    <i class="glyphicon {{ $episode->isLeaked() ? 'glyphicon-ban-circle' : 'glyphicon-flash' }}"></i>
-                    <strong>{{ $episode->isLeaked() ? __('UNMARK LEAKED') : __('MARK LEAKED') }}</strong>
-                    <form id="toggle-leaked-form" method="POST" action="{{ route('episodes.update', $episode->id) }}" style="display:none;">@csrf @method('PATCH')<input type="hidden" name="action" value="toggle_leaked"></form>
-                </a>
-            </td>
-        </tr>
-    @endif
-
-    {{-- Row 5: Torrent Actions (Nested Table) --}}
+    
     @if(settings('torrenting.enabled') && ($episode->hasAired() || $episode->isLeaked()))
-        <tr>
-            <td colspan="2" class="two-face-torrent" style="position:relative; padding: 0;">
-                <table style="width:100%; margin: 5px 0px 5px 0px;">
-                    <tr>
-                        <td style="width:100%; padding-left:15px;">
-                            @php
-                                $searchQuery = ($serie->custom_search_string ?: $serie->name) . ' ' . $episode->formatted_episode;
-                            @endphp
-                            <a href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.search-dialog', ['query' => $searchQuery, 'episode_id' => $episode->id]) }}')">
-                                <i class="glyphicon glyphicon-magnet"></i> <strong>{{ __('SIDEPANEL/EPISODE-DETAILS/find-torrent/btn') }}</strong>
-                            </a>
-                        </td>
-                        <td style="padding-right:6px;">
-                            {{-- Auto Download (Placeholder) --}}
-                            <a class="auto-download" href="javascript:void(0)" title="{{ __('COMMON/auto-download/lbl') }}" style="display: block; width: 40px; text-align: center;">
-                                <i class="glyphicon glyphicon-cloud-download"></i>
-                            </a>
-                        </td>
-                        <td style="padding-right:15px;">
-                            {{-- Settings (Placeholder) --}}
-                            <a class="torrent-settings" href="javascript:void(0)" title="{{ __('COMMON/settings/lbl') }}" style="display: block; width: 40px; text-align: center;">
-                                <i class="glyphicon glyphicon-cog"></i>
-                            </a>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    @endif
-
-    {{-- Row 6: Torrent Remote Control (Placeholder/Skipped) --}}
-
-    {{-- Row 7: Find Subtitle --}}
-    @if(settings('torrenting.enabled') && $episode->hasAired())
-        <tr>
-            <td colspan="2" class="buttons">
-                <a href="javascript:void(0)" title="{{ __('COMMON/find-subtitle/lbl') }}" onclick="window.Toast.info('Subtitle search not implemented yet.')">
-                    <i class="glyphicon glyphicon-text-width"></i> <strong>{{ __('COMMON/find-subtitle/lbl') }}</strong>
+    <tr>
+      <td colspan="2" class="two-face-torrent" style="position:relative">
+        <table style="width:100%;margin: 5px 0px 5px 0px">
+          <tr>
+            <td @if($serie->tvdb_id) style="width:100%;padding-left:15px" @endif>
+               @if($serie->tvdb_id)
+              <a class="torrent-dialog download" onclick="TorrentSearch.open('{{ route('torrents.search-dialog', ['query' => $searchQuery, 'episode_id' => $episode->id]) }}')">
+                <i class="glyphicon glyphicon-download"></i><strong style="padding-left:21px">{{ __('Find a torrent') }}</strong>
+              </a>
+               @else
+                <a class="download btn btn-danger" href='https://github.com/SchizoDuckie/DuckieTV/wiki/FAQ#why-is-the-episode-find-a-torrent-button-not-working' target='_blank'>
+                  <i class="glyphicon glyphicon-ban-circle"></i><strong style="display:flex">&nbsp;<del>&nbsp;TVDB_ID&nbsp;</del>&nbsp;<i class="glyphicon glyphicon-info-sign"></i></strong>
                 </a>
+               @endif
             </td>
-        </tr>
+            <td @if($serie->tvdb_id) style="padding-right:6px" @endif>
+               @if($serie->tvdb_id)
+              <a class="auto-download" onclick="window.SidePanel.autoDownload({{ $episode->id }})" title="{{ __('Auto Download') }}">
+                <i class="glyphicon glyphicon-cloud-download"></i><strong style="display:flex">&nbsp;</strong>
+              </a>
+               @else
+              <a class="auto-download btn btn-danger" href='https://github.com/SchizoDuckie/DuckieTV/wiki/FAQ#why-is-the-episode-find-a-torrent-button-not-working' target='_blank'>
+                <i class="glyphicon glyphicon-ban-circle"></i><strong style="display:flex">&nbsp;</strong>
+              </a>
+               @endif
+            </td>
+            <td style="padding-right:15px">
+              <a class="torrent-settings" style="text-decoration:none" href="javascript:void(0)" onclick="window.SidePanel.torrentSettings({{ $serie->id }})" title="{{ __('Settings for') }} {{ $serie->name }}">
+                <i class="glyphicon glyphicon-cog"></i><strong style="display:flex">&nbsp;</strong>
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
     @endif
-</table>
+
+    @if(settings('torrenting.enabled') && $episode->magnetHash)
+    <tr>
+      <td colspan="2" class="buttons">
+             @include('torrents._mini_remote_control', ['torrent' => $torrent])
+      </td>
+    </tr>
+    @endif
+    
+    @if(settings('torrenting.enabled') && ($episode->hasAired() || $episode->isLeaked()))
+    <tr>
+      <td colspan="2" class="buttons">
+        <a href="javascript:void(0)" onclick="window.Toast.info('Subtitle search not implemented yet.')">
+            <i class="glyphicon glyphicon-text-width"></i><strong>{{ __('Find Subtitle') }}</strong>
+        </a>
+      </td>
+    </tr>
+    @endif
+  </table>
+</div>
+

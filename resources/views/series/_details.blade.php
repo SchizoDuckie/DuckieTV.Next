@@ -16,7 +16,7 @@
 --}}
 <div class="serie-bg-img" style="background-image: url('{{ $serie->poster }}');"></div>
 
-<button type="button" class="close" onclick="SidePanel.hide()" title="Close {{ $serie->name }}">&times;</button>
+<button type="button" class="close" onclick="window.SidePanel.hide()" title="Close {{ $serie->name }}">&times;</button>
 
 <h2>
     <span>{{ $serie->name }}</span>
@@ -166,7 +166,7 @@
         @if(settings('torrenting.enabled'))
             <tr>
                 <td colspan="2">
-                    <a class="torrent-settings" href="javascript:void(0)" onclick="alert('Series settings not yet implemented')">
+                    <a class="torrent-settings" href="javascript:void(0)" onclick="window.SidePanel.torrentSettings({{ $serie->id }})">
                         <i class="glyphicon glyphicon-cog"></i> <strong>SETTINGS {{ $serie->name }}</strong>
                     </a>
                 </td>

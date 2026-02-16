@@ -1,5 +1,5 @@
 <div class="serie-overview" style="color:black">
-    <button type="button" class="close" onclick="SidePanel.show('{{ route('series.show', $serie->id) }}')" title="Back to overview">&times;</button>
+    <button type="button" class="close" data-sidepanel-show="{{ route('series.show', $serie->id) }}" title="Back to overview">&times;</button>
     <div class="serie-img poster large" style="background-image: url('{{ $serie->poster }}');">
         @if($serie->watched)
             <em class="badge" title="All watched">

@@ -25,14 +25,29 @@ class EpisodeController extends Controller
             try {
                 if ($client->connect()) {
                     $torrents = $client->getTorrents();
-                    $showName = strtolower($serie->name);
-                    $episodeCode = strtolower($episode->formatted_episode);
+                    
+                    // Priority 1: Match by InfoHash (if episode has one)
+                    if ($episode->magnetHash) {
+                        foreach ($torrents as $torrent) {
+                            if ((method_exists($torrent, 'getInfoHash') && $torrent->getInfoHash() === $episode->magnetHash) || (isset($torrent->infoHash) && $torrent->infoHash === $episode->magnetHash)) {
+                                $matchedTorrent = $torrent;
+                                break;
+                            }
+                        }
+                    }
 
-                    foreach ($torrents as $torrent) {
-                        $name = strtolower($torrent->getName());
-                        if (str_contains($name, $showName) && str_contains($name, $episodeCode)) {
-                            $matchedTorrent = $torrent;
-                            break;
+                    // Priority 2: Fallback to name matching if no infoHash match
+                    if (!$matchedTorrent) {
+                        $showName = strtolower($serie->name);
+                        $showNameDots = str_replace(' ', '.', $showName);
+                        $episodeCode = strtolower($episode->formatted_episode);
+
+                        foreach ($torrents as $torrent) {
+                            $name = strtolower($torrent->getName());
+                            if ((str_contains($name, $showName) || str_contains($name, $showNameDots)) && str_contains($name, $episodeCode)) {
+                                $matchedTorrent = $torrent;
+                                break;
+                            }
                         }
                     }
                 }
@@ -45,6 +60,7 @@ class EpisodeController extends Controller
             'episode' => $episode,
             'serie' => $serie,
             'torrent' => $matchedTorrent,
+            'searchQuery' => app(\App\Services\SceneNameResolverService::class)->getSearchStringForEpisode($serie, $episode),
         ]);
     }
 
@@ -64,6 +80,27 @@ class EpisodeController extends Controller
             $episode->isLeaked() ? $episode->markNotLeaked() : $episode->markLeaked();
         }
 
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => "Updated {$episode->formatted_episode}."]);
+        }
+
         return redirect()->back()->with('status', "Updated {$episode->formatted_episode}.");
+    }
+
+    /**
+     * Trigger automated download for an episode.
+     */
+    public function autoDownload(int $id)
+    {
+        $episode = Episode::with('serie')->findOrFail($id);
+        $service = app(\App\Services\AutoDownloadService::class);
+        
+        $success = $service->manualDownload($episode);
+
+        if ($success) {
+            return response()->json(['success' => true, 'message' => 'Torrent launched successfully.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No suitable torrent found or already downloaded. Check Activity Log.'], 422);
     }
 }

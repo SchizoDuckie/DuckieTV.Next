@@ -199,7 +199,7 @@ class DelugeClient extends BaseTorrentClient
     /**
      * Add a torrent by its URL.
      */
-    public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
+    public function addTorrentByUrl(string $url, ?string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
         return $this->addMagnet($url, $dlPath, $label);
     }

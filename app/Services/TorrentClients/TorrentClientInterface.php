@@ -58,7 +58,7 @@ interface TorrentClientInterface
      * @param  string|null  $dlPath  Optional custom download path.
      * @param  string|null  $label  Optional label or category.
      */
-    public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;
+    public function addTorrentByUrl(string $url, ?string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;
 
     /**
      * Add a torrent by uploading its raw binary data.

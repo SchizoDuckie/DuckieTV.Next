@@ -3,15 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Services\FavoritesService;
+use App\Services\SceneNameResolverService;
 use Illuminate\Http\Request;
 
 class SeriesController extends Controller
 {
     protected FavoritesService $favorites;
+    protected SceneNameResolverService $sceneNameResolver;
 
-    public function __construct(FavoritesService $favorites)
+    public function __construct(FavoritesService $favorites, SceneNameResolverService $sceneNameResolver)
     {
         $this->favorites = $favorites;
+        $this->sceneNameResolver = $sceneNameResolver;
     }
 
     /**
@@ -116,10 +119,28 @@ class SeriesController extends Controller
                 ?? $seasons->last();
         }
 
+        // Pre-calculate search queries for episodes
+        foreach ($activeSeason->episodes as $episode) {
+            $episode->search_query = $this->sceneNameResolver->getSearchStringForEpisode($serie, $episode);
+        }
+
+        // Calculate search query for the whole season
+        $seasonSearchQuery = ($serie->customSearchString ?: $serie->name) . ' season ' . $activeSeason->seasonnumber;
+
+        // Calculate ratings data for the chart
+        $ratingPoints = $activeSeason->episodes->sortBy('episodenumber')->map(function($episode) {
+            return [
+                'y' => $episode->rating ?? 0,
+                'label' => $episode->formatted_episode . ' : ' . ($episode->rating ?? 0) . '% (' . ($episode->ratingcount ?? 0) . ' ' . __('votes') . ')',
+            ];
+        })->values();
+
         return view('series._episodes', [
             'serie' => $serie,
             'seasons' => $seasons,
             'activeSeason' => $activeSeason,
+            'seasonSearchQuery' => $seasonSearchQuery,
+            'ratingPoints' => $ratingPoints,
         ]);
     }
 
@@ -149,6 +170,26 @@ class SeriesController extends Controller
             $serie->toggleAutoDownload();
         } elseif ($action === 'toggle_calendar') {
             $serie->toggleCalendarDisplay();
+        } elseif ($action === 'mark_season_watched') {
+            $seasonId = $request->input('season_id');
+            $season = $serie->seasons()->find($seasonId);
+            if ($season) {
+                foreach ($season->episodes as $episode) {
+                    if ($episode->hasAired()) {
+                        $episode->markWatched();
+                    }
+                }
+            }
+        } elseif ($action === 'mark_season_downloaded') {
+            $seasonId = $request->input('season_id');
+            $season = $serie->seasons()->find($seasonId);
+            if ($season) {
+                foreach ($season->episodes as $episode) {
+                    if ($episode->hasAired()) {
+                        $episode->markDownloaded();
+                    }
+                }
+            }
         }
 
         if ($request->ajax()) {

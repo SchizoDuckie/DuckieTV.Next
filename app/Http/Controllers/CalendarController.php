@@ -27,19 +27,25 @@ class CalendarController extends Controller
         $date = $request->has('date') ? Carbon::parse($request->get('date')) : now();
         $mode = $request->get('mode', 'month');
 
-        return match ($mode) {
+        $viewData = match ($mode) {
             'decade' => $this->decadeView($date),
             'year' => $this->yearView($date),
             'week' => $this->weekView($date),
             default => $this->monthView($date),
         };
+
+        if ($request->ajax()) {
+            return view('calendar.partial', $viewData);
+        }
+
+        return view('calendar.index', $viewData);
     }
 
     /**
      * Decade overview: 12 years (start - 1 to start + 10).
      * Clicking a year drills down to year view.
      */
-    private function decadeView(Carbon $date)
+    private function decadeView(Carbon $date): array
     {
         $year = $date->year;
         // Calculate start of decade (e.g. 2020 for 2026)
@@ -48,14 +54,14 @@ class CalendarController extends Controller
 
         $years = $this->calendar->getEpisodeCountsByYear($startYear, $endYear);
 
-        return view('calendar.index', [
+        return [
             'mode' => 'decade',
             'years' => $years,
             'currentDate' => $date, // Keep the specific date for context
             'startYear' => $startYear,
             'endYear' => $endYear,
             'title' => $startYear . '-' . $endYear,
-        ]);
+        ];
     }
 
     /**
@@ -64,16 +70,16 @@ class CalendarController extends Controller
      * Prev/next navigates between years.
      * Clicking title drills up to decade view.
      */
-    private function yearView(Carbon $date)
+    private function yearView(Carbon $date): array
     {
         $months = $this->calendar->getEpisodeCountsByMonth($date->year);
 
-        return view('calendar.index', [
+        return [
             'mode' => 'year',
             'months' => $months,
             'currentDate' => $date,
             'title' => (string) $date->year,
-        ]);
+        ];
     }
 
     /**
@@ -82,14 +88,14 @@ class CalendarController extends Controller
      * Clicking a day drills down to week view for that week.
      * Prev/next navigates between months.
      */
-    private function monthView(Carbon $date)
+    private function monthView(Carbon $date): array
     {
         $start = $date->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
         $end = $date->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
         $events = $this->calendar->getEventsForDateRange($start, $end);
 
-        return view('calendar.index', [
+        return [
             'mode' => 'month',
             'events' => $events,
             'currentDate' => $date,
@@ -97,7 +103,7 @@ class CalendarController extends Controller
             'monthName' => $date->format('F Y'),
             'start' => $start,
             'end' => $end,
-        ]);
+        ];
     }
 
     /**
@@ -105,21 +111,21 @@ class CalendarController extends Controller
      * Clicking the title drills up to month view.
      * Prev/next navigates between weeks.
      */
-    private function weekView(Carbon $date)
+    private function weekView(Carbon $date): array
     {
         $start = $date->copy()->startOfWeek(Carbon::MONDAY);
         $end = $date->copy()->endOfWeek(Carbon::SUNDAY);
 
         $events = $this->calendar->getEventsForDateRange($start, $end);
 
-        return view('calendar.index', [
+        return [
             'mode' => 'week',
             'events' => $events,
             'currentDate' => $date,
             'title' => $start->format('M d').' – '.$end->format('M d, Y'),
             'start' => $start,
             'end' => $end,
-        ]);
+        ];
     }
 
     /**

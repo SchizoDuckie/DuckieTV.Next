@@ -154,6 +154,7 @@ it('returns search results as JSON', function () {
         'engine' => 'ThePirateBay',
         'query' => 'Breaking Bad S01E01',
     ]);
+    $response->assertJsonStructure(['html']);
 });
 
 it('returns 422 with error message when search engine fails', function () {

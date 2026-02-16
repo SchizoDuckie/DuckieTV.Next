@@ -27,10 +27,11 @@ class AddTorrentRequest extends FormRequest
         return [
             'magnet' => 'required_without:url|nullable|string|startsWith:magnet:',
             'url' => 'required_without:magnet|nullable|url|max:2048',
-            'infoHash' => 'required_with:url|nullable|string|size:40',
+            'infoHash' => 'nullable|string',
             'releaseName' => 'required_with:url|nullable|string|max:500',
             'dlPath' => 'nullable|string|max:2048',
             'label' => 'nullable|string|max:255',
+            'episode_id' => 'nullable|integer|exists:episodes,id',
         ];
     }
 }

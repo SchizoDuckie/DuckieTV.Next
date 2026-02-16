@@ -62,14 +62,16 @@ class TorrentController extends Controller
         $episodeId = $request->validated('episode_id');
         $quality = $this->settings->get('torrenting.searchquality', '');
 
-        $engines = $this->searchService->getSearchEngines();
+        $allEngines = array_keys($this->searchService->getSearchEngines());
+        $enabledEngines = $this->settings->get('torrenting.search_enabled_engines', $allEngines);
         $defaultEngine = $this->settings->get('torrenting.searchprovider', self::DEFAULT_ENGINE);
 
         return view('torrents.search', [
             'query' => $query,
             'quality' => $quality,
             'episodeId' => $episodeId,
-            'engines' => array_keys($engines),
+            'engines' => $enabledEngines,
+            'allEngines' => $allEngines,
             'defaultEngine' => $defaultEngine,
             'qualityList' => $this->settings->get('torrenting.searchqualitylist', []),
         ]);
@@ -105,8 +107,11 @@ class TorrentController extends Controller
         try {
             $results = $this->searchService->search($query, $engine, $sortBy);
 
+            $html = view('torrents.results', ['results' => $results])->render();
+
             return response()->json([
-                'results' => $results,
+                'results' => $results, // Keep for now in case other things use it, or for debugging
+                'html' => $html,
                 'engine' => $engine ?? $this->settings->get('torrenting.searchprovider', self::DEFAULT_ENGINE),
                 'query' => $query,
             ]);
@@ -188,13 +193,34 @@ class TorrentController extends Controller
 
             $dlPath = $request->validated('dlPath');
             $label = $request->validated('label') ?? 'DuckieTV';
+            $episodeId = $request->validated('episode_id');
+
+            // Extract infoHash from magnet if not provided
+            $infoHash = $request->validated('infoHash');
+            if (! $infoHash && $request->has('magnet')) {
+                $infoHash = \App\Support\MagnetUri::extractInfoHash($request->validated('magnet'));
+            }
+
+            // Link to episode if provided
+            if ($episodeId) {
+                /** @var \App\Models\Episode|null $episode */
+                $episode = \App\Models\Episode::find($episodeId);
+                if ($episode) {
+                    // Update magnetHash if we found one (either passed or extracted)
+                    if ($infoHash) {
+                        $episode->update(['magnetHash' => $infoHash]);
+                    }
+                    $episode->markDownloaded();
+                    // Optional: You might want to dispatch an event here if needed
+                }
+            }
 
             if ($request->has('magnet')) {
                 $success = $client->addMagnet($request->validated('magnet'), $dlPath, $label);
             } elseif ($request->has('url')) {
                 $success = $client->addTorrentByUrl(
                     $request->validated('url'),
-                    $request->validated('infoHash'),
+                    $infoHash, // Use the resolved infoHash
                     $request->validated('releaseName'),
                     $dlPath,
                     $label
@@ -204,7 +230,11 @@ class TorrentController extends Controller
             }
 
             if ($success) {
-                return response()->json(['success' => true, 'message' => 'Torrent added successfully']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Torrent added successfully',
+                    'infoHash' => $infoHash, // Return the hash so specific UI logic can use it if needed
+                ]);
             }
 
             return response()->json(['error' => 'Failed to add torrent to client'], 422);

@@ -206,7 +206,7 @@ class SettingsService
         'torrenting.searchprovider' => 'ThePirateBay',
         'torrenting.searchquality' => '',
         'torrenting.searchqualitylist' => ['HDTV', 'WEB', '720p', '1080p', '2160p', 'x265'],
-        'torrenting.streaming' => true,
+        'torrenting.streaming' => false,
 
         // ─── Trakt ─────────────────────────────────────────────
         'trakt-update.period' => 1,

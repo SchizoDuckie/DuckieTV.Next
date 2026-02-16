@@ -1,6 +1,6 @@
 <div class="torrent-details" data-info-hash="{{ $torrent->getInfoHash() }}">
     <h1><span>{{ __('COMMON/torrent-details/lbl') }}</span>
-        <span><button type="button" class="close" onclick="SidePanel.hide()" style="margin-top:15px" title="{{ __('COMMON/close/btn') }} {{ __('COMMON/torrent-details/lbl') }}">&times;</button></span>
+        <span><button type="button" class="close" onclick="window.SidePanel.hide()" style="margin-top:15px" title="{{ __('COMMON/close/btn') }} {{ __('COMMON/torrent-details/lbl') }}">&times;</button></span>
     </h1>
 
     @if(!$torrent)
@@ -73,7 +73,7 @@
                         <span>{{ __('COMMON/stop/btn') }}</span>
                     </a>
                     <!-- remove button -->
-                    <a href="#" onclick="if(confirm('Are you sure you want to remove this torrent?')){ TorrentClient.remove('{{ $torrent->infoHash }}'); SidePanel.hide(); } return false;" style='display:inline-block'>
+                    <a href="#" onclick="if(confirm('Are you sure you want to remove this torrent?')){ TorrentClient.remove('{{ $torrent->infoHash }}'); window.SidePanel.hide(); } return false;" style='display:inline-block'>
                         <i class="glyphicon glyphicon-eject"></i>
                         <span>{{ __('COMMON/remove/btn') }}</span>
                     </a>

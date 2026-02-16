@@ -119,7 +119,7 @@ abstract class BaseTorrentClient implements TorrentClientInterface
      * @param  string|null  $label  Optional label or category to assign to the torrent.
      * @return bool True if the torrent was successfully added by URL, false otherwise.
      */
-    abstract public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;
+    abstract public function addTorrentByUrl(string $url, ?string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;
 
     /**
      * Add a torrent by uploading its raw data.

@@ -95,6 +95,10 @@ window.Modal = class Modal {
         const closeBtns = this.el.querySelectorAll('[data-dismiss="modal"]');
         closeBtns.forEach(btn => btn.addEventListener('click', () => this.hide()));
 
+        if (this.options.backdrop === true && this.backdrop) {
+            this.backdrop.addEventListener('click', () => this.hide());
+        }
+
         const minimizeBtn = this.el.querySelector('.minimize');
         if (minimizeBtn) {
             minimizeBtn.addEventListener('click', () => {

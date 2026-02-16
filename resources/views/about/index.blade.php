@@ -1,4 +1,5 @@
 <div class="about-container" style="padding: 20px;">
+    <button type="button" class="close" onclick="window.SidePanel.hide()" title="{{ __('COMMON/close/btn') }}">&times;</button>
     <h1>{{ __('COMMON/about/hdr') }}</h1>
     
     <div class="row">

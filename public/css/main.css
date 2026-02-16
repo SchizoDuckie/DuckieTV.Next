@@ -1068,9 +1068,9 @@ body.sidepanelActive {
     width: 840px;
 }
 
-.sidepanelActive .sidepanel.wide + series-list>div,
-.sidepanelActive .sidepanel.wide ~ series-list>div {
-    width: calc(100% - 840px);
+.sidepanelActive .sidepanel.wide+series-list>div,
+.sidepanelActive .sidepanel.wide~series-list>div {
+  width: calc(100% - 840px);
 }
 
 series-list .tools {
@@ -2315,7 +2315,8 @@ sidepanel .buttons strong {
   color: white;
 }
 
-sidepanel .buttons a {
+sidepanel .buttons a,
+sidepanel .buttons torrent-remote-control {
   display: block;
   padding: 11px 12px;
   margin: 5px 15px;

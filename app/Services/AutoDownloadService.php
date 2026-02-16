@@ -2,12 +2,25 @@
 
 namespace App\Services;
 
+use App\Models\AutoDownloadActivity;
 use App\Models\Episode;
 use App\Models\Serie;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Service responsible for automatically searching and downloading episode torrents.
+ * 
+ * This service handles:
+ * - Periodic checks for aired episodes within the configured window.
+ * - Manual download triggers for specific episodes.
+ * - Business logic for delays (On-Air delay), quality filters, and keyword filtering.
+ * - Integration with the active Torrent Client to add magnet/torrent links.
+ * - Activity logging for the Auto-Download dashboard via AutoDownloadActivity model.
+ * 
+ * @see AutoDownloadService.js in DuckieTV-angular for original implementation source.
+ */
 class AutoDownloadService
 {
     protected SettingsService $settings;
@@ -15,18 +28,30 @@ class AutoDownloadService
     protected TorrentSearchService $searchService;
     protected SceneNameResolverService $sceneNameResolver;
     protected TorrentClientService $torrentClientService;
+    
+    /** @var array<string, \App\DTOs\TorrentData\TorrentDataInterface> Internal cache of remote torrents indexed by infoHash */
     protected array $remoteTorrents = [];
 
     // Status codes matching original DuckieTV AutoDownloadService.js
+    /** Episode already marked as downloaded in DB */
     public const STATUS_DOWNLOADED = 0;
+    /** Episode already marked as watched in DB */
     public const STATUS_WATCHED = 1;
-    public const STATUS_HAS_MAGNET = 2; // already in client
+    /** Torrent infoHash already presents in the active Torrent Client */
+    public const STATUS_HAS_MAGNET = 2;
+    /** Auto-download skipped because feature is disabled for this series or globally */
     public const STATUS_AUTODL_DISABLED = 3;
+    /** Search returned no results matching filters */
     public const STATUS_NOTHING_FOUND = 4;
+    /** Search results found but all were filtered out by quality, size, or keywords */
     public const STATUS_FILTERED_OUT = 5;
+    /** A suitable torrent was found and successfully added to the client */
     public const STATUS_TORRENT_LAUNCHED = 6;
+    /** No results had enough seeders based on global or series-specific settings */
     public const STATUS_NOT_ENOUGH_SEEDERS = 7;
+    /** Episode has aired but is still within the 'safe' delay period (to allow for scene release) */
     public const STATUS_ON_AIR_DELAY = 8;
+    /** Series metadata is incomplete (missing TVDB ID) preventing reliable search */
     public const STATUS_TVDB_ID_MISSING = 9;
 
     public function __construct(
@@ -44,12 +69,17 @@ class AutoDownloadService
     }
 
     /**
-     * Get the activity list for the last run.
-     * In DuckieTV.Next, we'll store this in Cache for accessibility.
+     * Get the recent activity list from the database.
+     * 
+     * In the original DuckieTV-angular, the AutoDownloadService maintained an in-memory
+     * object/array of the 'last check' results to populate the Activity Log UI.
+     * In DuckieTV.Next, we use the autodl_activities table to persist this data.
+     * 
+     * @return \Illuminate\Database\Eloquent\Collection<int, AutoDownloadActivity> List of activity log entries.
      */
-    public function getActivityList(): array
+    public function getActivityList()
     {
-        return Cache::get('autodownload.activity_list', []);
+        return AutoDownloadActivity::orderBy('timestamp', 'desc')->limit(100)->get();
     }
 
     public function isEnabled(): bool
@@ -66,9 +96,7 @@ class AutoDownloadService
     protected function logActivity(Serie $serie, Episode $episode, string $search, int $status, string $extra = ''): void
     {
         $searchExtra = '';
-        $csm = 0;
         if ($serie->custom_search_size_min !== null || $serie->custom_search_size_max !== null) {
-            $csm = 1;
             $min = $serie->custom_search_size_min ?? '-';
             $max = $serie->custom_search_size_max ?? '-';
             $searchExtra = " ($min/$max)";
@@ -84,26 +112,18 @@ class AutoDownloadService
             $searchExtra .= " <{$serie->custom_excludes}>";
         }
 
-        $activity = [
+        AutoDownloadActivity::create([
+            'serie_id' => $serie->id,
+            'episode_id' => $episode->id,
             'search' => $search,
-            'searchProvider' => $serie->search_provider ? " ({$serie->search_provider})" : '',
-            'searchExtra' => $searchExtra,
+            'search_provider' => $serie->search_provider ? " ({$serie->search_provider})" : '',
+            'search_extra' => $searchExtra,
             'status' => $status,
             'extra' => $extra,
             'serie_name' => $serie->name,
             'episode_formatted' => $episode->getFormattedEpisode(),
             'timestamp' => now()->timestamp,
-        ];
-
-        $list = $this->getActivityList();
-        $list[] = $activity;
-        
-        // Keep only last 100 activities
-        if (count($list) > 100) {
-            array_shift($list);
-        }
-
-        Cache::put('autodownload.activity_list', $list, now()->addHours(24));
+        ]);
     }
 
     /**
@@ -114,9 +134,6 @@ class AutoDownloadService
         if (!$this->isEnabled()) {
             return;
         }
-
-        // Reset list for new run
-        Cache::put('autodownload.activity_list', [], now()->addHours(24));
 
         $client = $this->torrentClientService->getActiveClient();
         if ($client && $client->isConnected()) {
@@ -141,7 +158,19 @@ class AutoDownloadService
         $this->settings->set('autodownload.lastrun', now()->getTimestampMs());
     }
 
-    protected function processEpisode(Episode $episode): void
+    /**
+     * Public wrapper for UI-triggered download.
+     */
+    public function manualDownload(Episode $episode): bool
+    {
+        $hasBefore = !empty($episode->magnetHash);
+        $this->processEpisode($episode, true);
+        
+        $episode->refresh();
+        return !empty($episode->magnetHash) && (!$hasBefore || $this->torrentClientService->getActiveClient()->isConnected());
+    }
+
+    protected function processEpisode(Episode $episode, bool $force = false): void
     {
         $serie = $episode->serie;
         if (!$serie) return;
@@ -169,12 +198,7 @@ class AutoDownloadService
             return;
         }
 
-        if (!empty($episode->magnetHash) && isset($this->remoteTorrents[strtolower($episode->magnetHash)])) {
-            $this->logActivity($serie, $episode, $searchString, self::STATUS_HAS_MAGNET);
-            return;
-        }
-
-        if ($serie->autoLimitByTorrent && !empty($episode->magnetHash)) {
+        if (!empty($episode->magnetHash)) {
             $this->logActivity($serie, $episode, $searchString, self::STATUS_HAS_MAGNET);
             return;
         }
@@ -197,7 +221,7 @@ class AutoDownloadService
         $airedAt = Carbon::createFromTimestampMs($episode->firstaired);
         $safeToDownload = $airedAt->copy()->addMinutes($runtime + $delay);
 
-        if ($safeToDownload->isFuture()) {
+        if (!$force && $safeToDownload->isFuture()) {
             $diff = $safeToDownload->diffForHumans(['parts' => 2]);
             $this->logActivity($serie, $episode, $searchString, self::STATUS_ON_AIR_DELAY, " $diff");
             return;

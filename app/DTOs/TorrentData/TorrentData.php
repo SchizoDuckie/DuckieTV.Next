@@ -137,4 +137,12 @@ abstract class TorrentData
     {
         return $this->infoHash;
     }
+
+    /**
+     * Check if the torrent is 100% downloaded.
+     */
+    public function isDownloaded(): bool
+    {
+        return $this->getProgress() == 100;
+    }
 }

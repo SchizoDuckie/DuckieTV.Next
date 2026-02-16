@@ -37,7 +37,8 @@ class TorrentSearch {
                 searchRoute: root.getAttribute('data-search-route'),
                 detailsRoute: root.getAttribute('data-details-route'),
                 addRoute: root.getAttribute('data-add-route'),
-                titleTemplate: root.getAttribute('data-title-template')
+                titleTemplate: root.getAttribute('data-title-template'),
+                episodeId: root.getAttribute('data-episode-id')
             };
 
             // Extract Title (if exists)
@@ -61,23 +62,55 @@ class TorrentSearch {
             TorrentSearch._instance = new TorrentSearch(modal, config);
 
 
-            // Bind Advanced Options Toggle (if present)
+            // Bind Advanced Options Toggle
             const toggleAdv = modal.el.querySelector('#torrent-advanced-toggle');
             const advOptions = modal.el.querySelector('#torrent-advanced-options');
             if (toggleAdv && advOptions) {
                 toggleAdv.addEventListener('click', (e) => {
                     e.preventDefault();
-                    if (advOptions.style.display === 'none') {
-                        advOptions.style.display = 'block';
-                        const span = toggleAdv.querySelector('span');
-                        if (span) span.innerText = 'Hide Advanced Options';
-                    } else {
-                        advOptions.style.display = 'none';
-                        const span = toggleAdv.querySelector('span');
-                        if (span) span.innerText = 'Show Advanced Options';
+                    const isHidden = advOptions.style.display === 'none';
+                    advOptions.style.display = isHidden ? 'block' : 'none';
+                    const span = toggleAdv.querySelector('span');
+                    if (span) {
+                        span.innerText = isHidden ? 'Hide Advanced Options' : 'Show Advanced Options';
                     }
                 });
             }
+
+            // Bind Engine Toggles (in Advanced Options)
+            modal.el.querySelectorAll('.engine-toggle').forEach(checkbox => {
+                checkbox.addEventListener('change', async () => {
+                    const engine = checkbox.dataset.engine;
+                    const isEnabled = checkbox.checked;
+
+                    try {
+                        const enabledEngines = Array.from(modal.el.querySelectorAll('.engine-toggle:checked'))
+                            .map(cb => cb.dataset.engine);
+
+                        await fetch('/settings/torrent-search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({
+                                'torrenting.search_enabled_engines': enabledEngines
+                            }),
+                        });
+
+                        // To keep it simple and clean, we trigger a search which will also update the UI
+                        // (Alternatively, we could re-render the selection bar buttons here)
+                        if (TorrentSearch._instance) {
+                            TorrentSearch._instance.doSearch();
+                        }
+                    } catch (e) {
+                        console.error('Failed to save engine setting', e);
+                    }
+                });
+            });
+
 
         } catch (error) {
             console.error('TorrentSearch: Error opening dialog', error);
@@ -103,6 +136,7 @@ class TorrentSearch {
         this.searchRoute = config.searchRoute;
         this.detailsRoute = config.detailsRoute;
         this.addRoute = config.addRoute;
+        this.episodeId = config.episodeId;
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         this.titleTemplate = config.titleTemplate || '';
 
@@ -140,67 +174,66 @@ class TorrentSearch {
         this.resultsBody = this.el.querySelector('#torrent-results-body');
     }
 
+    // ... (rest of the file)
+
     bindEvents() {
-        // Modal class handles 'close' buttons (data-dismiss="modal") automatically.
-        // We just need to handle our custom logic.
+        // ... (existing bindings)
 
-        // Search button click
-        if (this.searchBtn) {
-            this.searchBtn.addEventListener('click', () => this.doSearch());
-        }
-
-        // Enter key in search input
-        if (this.searchInput) {
-            this.searchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
+        // Event Delegation for Results Table
+        if (this.resultsBody) {
+            this.resultsBody.addEventListener('click', (e) => {
+                // 1. Add to Client
+                const addBtn = e.target.closest('.torrent-add-client');
+                if (addBtn) {
                     e.preventDefault();
-                    this.doSearch();
+                    this.addTorrent(
+                        addBtn.dataset.magnet,
+                        addBtn.dataset.url,
+                        addBtn.dataset.infoHash,
+                        addBtn.dataset.releaseName
+                    );
+                    return;
+                }
+
+                // 2. Fetch Magnet
+                const magnetBtn = e.target.closest('.torrent-fetch-magnet');
+                if (magnetBtn) {
+                    e.preventDefault();
+                    const index = parseInt(magnetBtn.dataset.index);
+                    this.fetchDetails(index, magnetBtn, 'magnet');
+                    return;
+                }
+
+                // 3. Fetch Torrent file
+                const torrentBtn = e.target.closest('.torrent-fetch-torrent');
+                if (torrentBtn) {
+                    e.preventDefault();
+                    const index = parseInt(torrentBtn.dataset.index);
+                    this.fetchDetails(index, torrentBtn, 'torrent');
+                    return;
                 }
             });
         }
 
-        // Engine selector buttons
+        // Engine Selection Buttons
         this.el.querySelectorAll('.torrent-engine-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Return if already active
-                if (btn.classList.contains('active')) return;
-
-                // Deactivate all
-                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => {
-                    b.classList.remove('active');
-                    b.style.color = 'white';
-                    const icon = b.querySelector('.tb-activeIcon');
-                    if (icon) {
-                        icon.classList.remove('glyphicon-ok');
-                        icon.classList.add('glyphicon-remove');
-                    }
-                });
-
-                // Activate clicked
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Update active state
+                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                btn.style.color = 'gray'; // Matching original style for active
-                const icon = btn.querySelector('.tb-activeIcon');
-                if (icon) {
-                    icon.classList.remove('glyphicon-remove');
-                    icon.classList.add('glyphicon-ok');
-                }
 
-                // Trigger search if input is not empty
-                if (this.searchInput && this.searchInput.value.trim()) {
-                    this.doSearch();
-                }
+                // Update current engine and search
+                this.currentEngine = btn.dataset.engine;
+                this.doSearch();
             });
         });
+    }
 
-        // Quality filter buttons
-        this.el.querySelectorAll('.quality-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.toggleQuality(btn));
-        });
-
-        // Sort header clicks
-        this.el.querySelectorAll('.torrent-sort').forEach(th => {
-            th.addEventListener('click', () => this.toggleSort(th.dataset.sort));
-        });
+    renderResults(html) {
+        if (!this.resultsBody) return;
+        this.resultsBody.innerHTML = html;
+        // No need to rebind events!
     }
 
     getActiveEngine() {
@@ -269,7 +302,7 @@ class TorrentSearch {
             if (this.results.length === 0) {
                 this.showStatus('empty');
             } else {
-                this.sortAndRender();
+                this.renderResults(data.html); // Pass HTML
                 this.showStatus('results');
                 this.updateTitle();
             }
@@ -349,81 +382,7 @@ class TorrentSearch {
         this.renderResults();
     }
 
-    renderResults() {
-        if (!this.resultsBody) return;
-
-        this.resultsBody.innerHTML = this.results.map((result, index) => {
-            // -- Actions Column Icons --
-
-            // 1. Magnet (Add to client)
-            const magnetIcon = result.noMagnet
-                ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-magnet" style="color:gray"></i></a>`
-                : (result.magnetUrl
-                    ? `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client"><i class="glyphicon glyphicon-magnet"></i></a>`
-                    : `<a href="javascript:void(0)" class="torrent-fetch-magnet" data-index="${index}" title="Fetch magnet link"><i class="glyphicon glyphicon-magnet" style="color: #aaa;"></i></a>`);
-
-            // 2. Download (Torrent File - Add to client)
-            const downloadIcon = result.noTorrent
-                ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-download" style="color:gray"></i></a>`
-                : (result.torrentUrl
-                    ? `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client"><i class="glyphicon glyphicon-download"></i></a>`
-                    : `<a href="javascript:void(0)" class="torrent-fetch-torrent" data-index="${index}" title="Fetch torrent file"><i class="glyphicon glyphicon-download" style="color: #aaa;"></i></a>`);
-
-            // 3. Link (Open Magnet/Torrent URL directly)
-
-            const linkIcon = result.magnetUrl
-                ? `<a href="${result.magnetUrl}" class="torrent-external-link" title="Magnet Link"><i class="glyphicon glyphicon-link"></i></a>`
-                : (result.noMagnet
-                    ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-link" style="color:gray"></i></a>`
-                    : `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-link" style="color:gray"></i></a>`);
-
-            // 4. Info (Details)
-            const infoIcon = result.detailUrl
-                ? `<a href="${result.detailUrl}" target="_blank" title="Torrent Details"><i class="glyphicon glyphicon-info-sign"></i></a>`
-                : `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-info-sign" style="color:gray"></i></a>`;
-
-            return `<tr>
-                <td style="width:80px; padding:5px; vertical-align: top; white-space: nowrap;">
-                    ${magnetIcon}
-                    ${downloadIcon}
-                    ${linkIcon}
-                    ${infoIcon}
-                </td>
-                <td>${this.escapeHtml(result.engine)}</td>
-                <td class="releasename" title="${this.escapeHtml(result.releasename)}">${this.escapeHtml(result.releasename)}</td>
-                <td style="text-align: right; white-space: nowrap;">${this.escapeHtml(result.size)}</td>
-                <td style="text-align: right; color: #5cb85c; width:50px;">${result.seeders}</td>
-                <td style="text-align: right; color: #d9534f; width:50px;">${result.leechers}</td>
-            </tr>`;
-        }).join('');
-
-        // Re-bind events
-        this.resultsBody.querySelectorAll('.torrent-add-client').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const index = parseInt(link.dataset.index);
-                const result = this.results[index];
-                // Prefer magnet, then torrent
-                this.addTorrent(result.magnetUrl, result.torrentUrl, result.infoHash, result.releasename);
-            });
-        });
-
-        this.resultsBody.querySelectorAll('.torrent-fetch-magnet').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const index = parseInt(link.dataset.index);
-                this.fetchDetails(index, link, 'magnet');
-            });
-        });
-
-        this.resultsBody.querySelectorAll('.torrent-fetch-torrent').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const index = parseInt(link.dataset.index);
-                this.fetchDetails(index, link, 'torrent');
-            });
-        });
-    }
+    // renderResults() and bindResultEvents() removed in favor of event delegation in bindEvents());
 
     async fetchDetails(index, linkEl, type) {
         const result = this.results[index];
@@ -495,6 +454,21 @@ class TorrentSearch {
             return;
         }
 
+
+        const payload = {
+            releaseName: releaseName,
+            episode_id: this.episodeId
+        };
+
+        // If we have a magnet, just use that. It's the most reliable and doesn't require infoHash validation.
+        if (magnet) {
+            payload.magnet = magnet;
+        } else {
+            // If no magnet, we try URL. This requires infoHash by backend definition.
+            payload.url = url;
+            payload.infoHash = infoHash;
+        }
+
         try {
             const response = await fetch(this.addRoute, {
                 method: 'POST',
@@ -504,12 +478,7 @@ class TorrentSearch {
                     'X-CSRF-TOKEN': this.csrfToken,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({
-                    magnet: magnet,
-                    url: url,
-                    infoHash: infoHash,
-                    releaseName: releaseName
-                }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();

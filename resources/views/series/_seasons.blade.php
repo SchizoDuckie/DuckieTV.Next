@@ -14,7 +14,7 @@
     @see templates/sidepanel/seasons.html in DuckieTV-angular
 --}}
 <div class="seasons miniposter" style="text-align:center">
-    <button type="button" class="close" onclick="SidePanel.show('{{ route('series.show', $serie->id) }}')" title="Close Seasons">&times;</button>
+    <button type="button" class="close" data-sidepanel-show="{{ route('series.show', $serie->id) }}" title="Close Seasons">&times;</button>
 
     <h2 style="margin-bottom:50px;">
         <span style="border-bottom: 1px solid white; padding:5px; margin-bottom:15px">SEASONS</span>

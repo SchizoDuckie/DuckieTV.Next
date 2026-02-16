@@ -108,14 +108,6 @@
         }
         .close-overlay:hover { color: #d9534f; }
         
-        /* SidePanel Wide Mode (Double-wide) */
-        sidepanel .sidepanel.wide {
-            width: 900px !important;
-            max-width: 90vw;
-        }
-        sidepanel .sidepanel.wide .leftpanel {
-            width: 100%;
-        }
     </style>
 </head>
 <body class="{{ app(\App\Services\SettingsService::class)->get('kc.always', false) ? 'kc' : '' }}">
@@ -164,25 +156,7 @@
                 <a href="#" title="{{ __('TORRENTDIALOG/search-download-any/tooltip') }}" class="glyphicon glyphicon-download"
                    onclick="TorrentSearch.open('{{ route('torrents.search-dialog') }}'); return false;"></a>
             </li>
-            @inject('torrentService', 'App\Services\TorrentClientService')
-            @php
-                $activeClient = $torrentService->getActiveClient();
-                $clientClass = 'none';
-                if ($activeClient) {
-                    $name = strtolower($activeClient->getName());
-                    if (str_contains($name, 'utorrent')) $clientClass = 'utorrent';
-                    elseif (str_contains($name, 'qbittorrent')) $clientClass = 'qbittorrent';
-                    elseif (str_contains($name, 'transmission')) $clientClass = 'transmission';
-                    elseif (str_contains($name, 'deluge')) $clientClass = 'deluge';
-                    elseif (str_contains($name, 'vuze')) $clientClass = 'vuze';
-                    elseif (str_contains($name, 'biglybt')) $clientClass = 'biglybt';
-                    elseif (str_contains($name, 'tixati')) $clientClass = 'tixati';
-                    elseif (str_contains($name, 'rtorrent')) $clientClass = 'rtorrent';
-                    elseif (str_contains($name, 'ktorrent')) $clientClass = 'ktorrent';
-                    elseif (str_contains($name, 'aria2')) $clientClass = 'aria2';
-                    elseif (str_contains($name, 'ttorrent')) $clientClass = 'ttorrent';
-                }
-            @endphp
+            {{-- TorrentClientComposer injects $activeClient and $clientClass --}}
             <li id="actionbar_torrent">
                 <a href="#" title="{{ $activeClient ? $activeClient->getName() : 'DuckieTorrent' }}" class="glyphicon {{ $clientClass }}"
                    data-sidepanel-show="{{ route('torrents.index') }}"></a>

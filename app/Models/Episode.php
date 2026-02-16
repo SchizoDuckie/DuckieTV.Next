@@ -141,6 +141,20 @@ class Episode extends Model
         return \Carbon\Carbon::createFromTimestampMs($this->firstaired)->format('H:i');
     }
 
+    /**
+     * Get the air date as a string "F j, Y, g:i a" or "Unknown" / "?" based on context.
+     * Used in templates to avoid inline Carbon checks.
+     */
+    public function getFormattedAirDate(): string
+    {
+        $date = $this->getAirDate();
+        if ($date instanceof \Carbon\Carbon) {
+            return $date->format('F j, Y, g:i a');
+        }
+
+        return 'Unknown';
+    }
+
     // ─── State Checks ───────────────────────────────────────────
 
     /**

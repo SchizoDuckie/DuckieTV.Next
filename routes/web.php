@@ -42,8 +42,17 @@ Route::delete('/series/{id}', [\App\Http\Controllers\SeriesController::class , '
 // Episodes
 Route::get('/episodes/{id}', [\App\Http\Controllers\EpisodeController::class , 'show'])->name('episodes.show');
 Route::patch('/episodes/{id}', [\App\Http\Controllers\EpisodeController::class , 'update'])->name('episodes.update');
+Route::post('/episodes/{id}/auto-download', [\App\Http\Controllers\EpisodeController::class , 'autoDownload'])->name('episodes.auto-download');
 
 // Torrent Search
+Route::get('/debug-engines', function() {
+    $service = app(\App\Services\TorrentSearchService::class);
+    return response()->json([
+        'engines' => array_keys($service->getSearchEngines()),
+        'count' => count($service->getSearchEngines())
+    ]);
+});
+
 Route::prefix('torrents')->group(function () {
     Route::get('/search-dialog', [\App\Http\Controllers\TorrentController::class , 'searchDialog'])->name('torrents.search-dialog');
     Route::get('/search', [\App\Http\Controllers\TorrentController::class , 'search'])->name('torrents.search');

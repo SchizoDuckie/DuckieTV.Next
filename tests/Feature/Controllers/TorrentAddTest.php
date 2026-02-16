@@ -97,11 +97,11 @@ class TorrentAddTest extends TestCase
     {
         $response = $this->postJson(route('torrents.add'), [
             'url' => 'http://example.com/file.torrent',
-            // Missing infoHash and releaseName
+            // infohash and releasename are intentionally missing
         ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['infoHash', 'releaseName']);
+        $response->assertJsonValidationErrors(['releaseName']);
     }
 
     public function test_add_endpoint_validates_magnet_prefix()

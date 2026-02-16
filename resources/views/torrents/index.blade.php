@@ -36,7 +36,7 @@
         @else
             <h4 id="getTorrentsCount">
                 <span>{{ __('TORRENTCLIENT/torrents-found/hdr') }}</span> {{ count($torrents) }}
-                <button type="button" class="close pull-right" onclick="SidePanel.hide()" title="{{ __('COMMON/close/btn') }} DuckieTorrent">&times;</button>
+                <button type="button" class="close pull-right" onclick="window.SidePanel.hide()" title="{{ __('COMMON/close/btn') }} DuckieTorrent">&times;</button>
             </h4>
         @endif
     </div>
