@@ -14,3 +14,11 @@ parameters:
     # proper SARIF configuration
     errorFormat: sarif
 
+services:
+    errorFormatter.sarif:
+        class: PHPStanSarifErrorFormatter\SarifErrorFormatter
+        arguments:
+            relativePathHelper: @simpleRelativePathHelper
+            currentWorkingDirectory: %currentWorkingDirectory%
+            pretty: true
+
