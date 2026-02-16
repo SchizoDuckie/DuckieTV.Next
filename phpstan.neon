@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - config/
+        - database/
+        - routes/
+
+    # Level 5 is a good balance for existing projects (max is 9)
+    level: 5
+
+    # proper SARIF configuration
+    errorFormat: sarif
+

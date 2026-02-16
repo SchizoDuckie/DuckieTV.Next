@@ -1,0 +1,14 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.0.1",
+        "laravel-echo": "^2.3.0",
+        "pusher-js": "^8.4.0",
+        "tailwindcss": "^4.0.0"
+    }
+}

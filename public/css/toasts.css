@@ -1,0 +1,80 @@
+/* Original DuckieTV Query Monitor Styles */
+.query-monitor {
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    background-color: rgba(0, 50, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    padding: 10px;
+    z-index: 10000;
+    width: 250px;
+    border-radius: 10px;
+    height: 80px;
+    opacity: 0;
+    transform: translateX(120%);
+    transition: all 0.2s ease-in;
+    pointer-events: none;
+}
+
+.query-monitor i {
+    float: left;
+    font-size: 35px;
+    margin: 4px;
+    margin-right: 8px;
+}
+
+.query-monitor .progress {
+    margin-bottom: 10px;
+}
+
+.query-monitor.show {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.query-monitor .count {
+    color: black;
+    width: 183px;
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 0.4px;
+    display: block;
+}
+
+/* Spinner for loading states */
+@keyframes torrent-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: torrent-spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* Minimal Toast fallback if no original was found (matching Bootstrap/DuckieTV aesthetic) */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+}
+
+.toast {
+    background-color: rgba(20, 20, 20, 0.9);
+    color: white;
+    border: 1px solid white;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    min-width: 200px;
+    transition: opacity 0.3s ease;
+}
