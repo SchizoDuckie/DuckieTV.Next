@@ -17,7 +17,7 @@ class NyaaEngine extends GenericSearchEngine
             'mirror' => $settings->get('mirror.Nyaa', 'https://nyaa.si'),
             'includeBaseURL' => true,
             'endpoints' => [
-                'search' => '/?q=%s&f=0&c=0_0%o'
+                'search' => '/?q=%s&f=0&c=0_0%o',
             ],
             'selectors' => [
                 'resultContainer' => 'tr',
@@ -27,14 +27,14 @@ class NyaaEngine extends GenericSearchEngine
                 'size' => ['td:nth-of-type(4)', 'innerText'],
                 'seeders' => ['td:nth-of-type(6)', 'innerText'],
                 'leechers' => ['td:nth-of-type(7)', 'innerText'],
-                'detailUrl' => ['td:nth-of-type(2) a:last-of-type', 'href']
+                'detailUrl' => ['td:nth-of-type(2) a:last-of-type', 'href'],
             ],
             'orderby' => [
                 'age' => ['d' => '&s=id&o=desc', 'a' => '&s=id&o=asc'],
                 'seeders' => ['d' => '&s=seeders&o=desc', 'a' => '&s=seeders&o=asc'],
                 'leechers' => ['d' => '&s=leechers&o=desc', 'a' => '&s=leechers&o=asc'],
-                'size' => ['d' => '&s=size&o=desc', 'a' => '&s=size&o=asc']
-            ]
+                'size' => ['d' => '&s=size&o=desc', 'a' => '&s=size&o=asc'],
+            ],
         ]);
     }
 }

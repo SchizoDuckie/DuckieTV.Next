@@ -16,7 +16,7 @@ class UindexEngine extends GenericSearchEngine
             'mirror' => $settings->get('mirror.Uindex', 'http://uindex.net'),
             'includeBaseURL' => true,
             'endpoints' => [
-                'search' => '/search.php?search=%s'
+                'search' => '/search.php?search=%s',
             ],
             'selectors' => [
                 'resultContainer' => 'table.maintable > tbody > tr',
@@ -25,7 +25,7 @@ class UindexEngine extends GenericSearchEngine
                 'leechers' => ['td:nth-child(5)', 'innerText'],
                 'size' => ['td:nth-child(3)', 'innerText'],
                 'detailUrl' => ['a[href^="/details.php?id="]', 'href'],
-                'magnetUrl' => ['a[href^="magnet:?xt="]', 'href']
+                'magnetUrl' => ['a[href^="magnet:?xt="]', 'href'],
             ],
         ]);
     }

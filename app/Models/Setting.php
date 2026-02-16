@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  * This model is primarily accessed through the SettingsService class and
  * the global settings() helper function, not directly.
  *
- * @property string      $key    Setting key (primary key, e.g. "torrenting.client")
- * @property string|null $value  Setting value (stored as text; arrays/objects JSON-encoded)
+ * @property string $key Setting key (primary key, e.g. "torrenting.client")
+ * @property string|null $value Setting value (stored as text; arrays/objects JSON-encoded)
  *
  * @see \App\Services\SettingsService
  */

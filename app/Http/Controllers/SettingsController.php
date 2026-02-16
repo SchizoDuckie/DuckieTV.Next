@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Settings\ShowSettingsRequest;
+use App\Services\TorrentClientService;
+use App\Services\TranslationService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Services\TranslationService;
-use App\Http\Requests\Settings\ShowSettingsRequest;
-
-use App\Services\TorrentClientService;
 
 class SettingsController extends Controller
 {
     protected $translationService;
+
     protected $torrentClientService;
+
     protected $backupService;
 
     public function __construct(
-        TranslationService $translationService, 
+        TranslationService $translationService,
         TorrentClientService $torrentClientService,
         \App\Services\BackupService $backupService
     ) {
@@ -32,7 +33,7 @@ class SettingsController extends Controller
     {
         return view('settings.index', [
             'locales' => $this->translationService->getAvailableLocales(),
-            'supportedClients' => $this->getSupportedClients()
+            'supportedClients' => $this->getSupportedClients(),
         ]);
     }
 
@@ -47,8 +48,8 @@ class SettingsController extends Controller
                     'id' => $presenter->getId(),
                     'name' => $presenter->getName(),
                     'icon' => $presenter->getIcon(),
-                    'css_class' => $presenter->getCssClass()
-                ]
+                    'css_class' => $presenter->getCssClass(),
+                ],
             ];
         })->toArray();
     }
@@ -59,7 +60,7 @@ class SettingsController extends Controller
     public function show(ShowSettingsRequest $request, string $section): View
     {
         // Validation is handled by ShowSettingsRequest
-        
+
         $data = [];
         if (in_array($section, ['language', 'subtitles'])) {
             $data['locales'] = $this->translationService->getAvailableLocales();
@@ -68,9 +69,9 @@ class SettingsController extends Controller
         if ($section === 'torrent') {
             $data['supportedClients'] = $this->getSupportedClients();
         }
-        
+
         $data['section'] = $section;
-        
+
         return view("settings.$section", $data);
     }
 
@@ -91,7 +92,7 @@ class SettingsController extends Controller
             'trakttv' => \App\Http\Requests\Settings\UpdateTraktSettingsRequest::class,
         ];
 
-        if (!array_key_exists($section, $allowed)) {
+        if (! array_key_exists($section, $allowed)) {
             abort(404);
         }
 
@@ -116,9 +117,9 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => $validator->errors()->first(),
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -130,11 +131,11 @@ class SettingsController extends Controller
         $rawData = $request->all();
         foreach ($rules as $key => $rule) {
             if ($rule === 'boolean' || (is_array($rule) && in_array('boolean', $rule))) {
-                if (!\Illuminate\Support\Arr::has($validated, $key)) {
+                if (! \Illuminate\Support\Arr::has($validated, $key)) {
                     $prefix = str_contains($key, '.') ? explode('.', $key)[0] : $key;
                     // Check if there are other fields in the same configuration group present
                     $otherFieldsInGroup = collect($rawData)->keys()
-                        ->filter(fn($k) => str_starts_with($k, $prefix . '.'))
+                        ->filter(fn ($k) => str_starts_with($k, $prefix.'.'))
                         ->count();
 
                     if ($otherFieldsInGroup > 0) {
@@ -147,7 +148,7 @@ class SettingsController extends Controller
         // validated() returns nested arrays corresponding to dot rules.
         // We need to flatten them back to dot notation for storage.
         $flattened = \Illuminate\Support\Arr::dot($validated);
-        
+
         foreach ($flattened as $key => $value) {
             settings($key, $value);
         }
@@ -169,7 +170,7 @@ class SettingsController extends Controller
                     }
                 } catch (\Exception $e) {
                     $res['connection_success'] = false;
-                    $res['connection_error'] = "Connection to {$client->getName()} failed: " . $e->getMessage();
+                    $res['connection_error'] = "Connection to {$client->getName()} failed: ".$e->getMessage();
                 }
             }
         }
@@ -184,9 +185,9 @@ class SettingsController extends Controller
     {
         $request->validate([
             'backup_file' => 'required|file|mimetypes:application/json,text/plain|max:10240', // 10MB max
-            'wipe' => 'sometimes|boolean'
+            'wipe' => 'sometimes|boolean',
         ]);
-        
+
         try {
             $file = $request->file('backup_file');
             $json = file_get_contents($file->getRealPath());
@@ -195,7 +196,7 @@ class SettingsController extends Controller
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid JSON file: ' . json_last_error_msg()
+                    'message' => 'Invalid JSON file: '.json_last_error_msg(),
                 ], 422);
             }
 
@@ -210,15 +211,16 @@ class SettingsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Restore started in background. Please wait...",
-                'status' => 'started'
+                'message' => 'Restore started in background. Please wait...',
+                'status' => 'started',
             ]);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Restore failed: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Restore failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Restore failed: ' . $e->getMessage()
+                'message' => 'Restore failed: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -230,37 +232,38 @@ class SettingsController extends Controller
     {
         // Default to idle if no progress is found
         $progress = \Illuminate\Support\Facades\Cache::get('backup_progress', [
-            'percent' => 0, 
+            'percent' => 0,
             'status' => 'idle',
             'message' => 'Waiting for start...',
-            'logs' => []
+            'logs' => [],
         ]);
 
         return response()->json($progress);
     }
+
     /**
      * Cancel the current running restore batch.
      */
     public function cancelRestore()
     {
         $progress = \Illuminate\Support\Facades\Cache::get('backup_progress');
-        
+
         if (isset($progress['batch_id'])) {
             $batchId = $progress['batch_id'];
             $batch = \Illuminate\Support\Facades\Bus::findBatch($batchId);
-            
+
             if ($batch) {
                 $batch->cancel();
-                
+
                 $progress['status'] = 'cancelled';
                 $progress['message'] = 'Cancellation requested...';
-                $progress['logs'][] = date('H:i:s') . ' - User requested cancellation.';
+                $progress['logs'][] = date('H:i:s').' - User requested cancellation.';
                 \Illuminate\Support\Facades\Cache::put('backup_progress', $progress);
-                
+
                 return response()->json(['success' => true, 'message' => 'Cancellation requested.']);
             }
         }
-        
+
         return response()->json(['success' => false, 'message' => 'No active batch found to cancel.'], 404);
     }
 }

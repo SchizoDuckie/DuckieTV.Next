@@ -7,6 +7,7 @@ use App\Models\Setting;
 class SettingsService
 {
     private array $cache = [];
+
     private bool $loaded = false;
 
     /**
@@ -341,7 +342,7 @@ class SettingsService
 
     private function ensureLoaded(): void
     {
-        if (!$this->loaded) {
+        if (! $this->loaded) {
             $this->restore();
         }
     }
@@ -354,14 +355,22 @@ class SettingsService
     {
         foreach ($settings as $key => $value) {
             // Skip invalid or legacy keys
-            if ($key === 'utorrent.token') continue;
-            if ($key === 'database.version') continue;
-            
+            if ($key === 'utorrent.token') {
+                continue;
+            }
+            if ($key === 'database.version') {
+                continue;
+            }
+
             // Handle Jackett specially (legacy format) - skipping for now as per plan
-            if ($key === 'jackett') continue;
+            if ($key === 'jackett') {
+                continue;
+            }
 
             // Handle useTrakt_id flag (logic handled in caller usually, but we can store it or ignore it)
-            if ($key === 'useTrakt_id') continue;
+            if ($key === 'useTrakt_id') {
+                continue;
+            }
 
             $this->set($key, $value);
         }

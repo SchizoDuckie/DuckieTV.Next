@@ -2,17 +2,17 @@
 
 namespace App\Services\TorrentClients;
 
-use Illuminate\Support\Facades\Http;
+use App\DTOs\TorrentData\QBittorrentData;
 use App\Services\SettingsService;
 use Exception;
-use App\DTOs\TorrentData\QBittorrentData;
+use Illuminate\Support\Facades\Http;
 
 /**
  * qBittorrent 4.1+ Client Implementation.
- * 
+ *
  * This class handles communication with a qBittorrent server using its Web API v2.
  * It manages authentication, retrieving torrent lists, and adding torrents.
- * 
+ *
  * @see qBittorrent41plus.js in DuckieTV-angular for original implementation.
  */
 class QBittorrentClient extends BaseTorrentClient
@@ -20,9 +20,6 @@ class QBittorrentClient extends BaseTorrentClient
     /** @var string|null Authentication cookie */
     protected ?string $cookie = null;
 
-    /**
-     * @param SettingsService $settings
-     */
     public function __construct(SettingsService $settings)
     {
         parent::__construct($settings);
@@ -43,14 +40,12 @@ class QBittorrentClient extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for QBittorrent.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'   => 'qbittorrent32plus.server',
-            'port'     => 'qbittorrent32plus.port',
+            'server' => 'qbittorrent32plus.server',
+            'port' => 'qbittorrent32plus.port',
             'username' => 'qbittorrent32plus.username',
             'password' => 'qbittorrent32plus.password',
             'use_auth' => 'qbittorrent32plus.use_auth',
@@ -59,24 +54,22 @@ class QBittorrentClient extends BaseTorrentClient
 
     /**
      * Construct a full URL for a qBittorrent API endpoint.
-     * 
-     * @param string $path
-     * @return string
      */
     protected function getUrl(string $path): string
     {
         $server = $this->config['server'] ?? 'http://localhost';
-        if (!preg_match('/^https?:\/\//', $server)) {
-            $server = 'http://' . $server;
+        if (! preg_match('/^https?:\/\//', $server)) {
+            $server = 'http://'.$server;
         }
 
-        return rtrim($server, '/') . ':' . ($this->config['port'] ?? '8080') . '/api/v2/' . ltrim($path, '/');
+        return rtrim($server, '/').':'.($this->config['port'] ?? '8080').'/api/v2/'.ltrim($path, '/');
     }
 
     /**
      * Authenticate with the qBittorrent server.
-     * 
+     *
      * @return bool True if login was successful
+     *
      * @throws Exception if login request fails
      */
     public function connect(): bool
@@ -91,17 +84,18 @@ class QBittorrentClient extends BaseTorrentClient
             if ($response->successful() && $response->body() === 'Ok.') {
                 $this->cookie = $response->header('Set-Cookie');
                 $this->connected = true;
+
                 return true;
             }
 
             $this->connected = false;
-            if (!$response->successful()) {
-                throw new Exception("qBittorrent returned HTTP {$response->status()}: " . $response->body());
+            if (! $response->successful()) {
+                throw new Exception("qBittorrent returned HTTP {$response->status()}: ".$response->body());
             }
             if ($response->body() !== 'Ok.') {
-                throw new Exception("qBittorrent login failed: " . $response->body());
+                throw new Exception('qBittorrent login failed: '.$response->body());
             }
-            
+
             return false;
         } catch (Exception $e) {
             $this->connected = false;
@@ -109,15 +103,12 @@ class QBittorrentClient extends BaseTorrentClient
         }
     }
 
-
     /**
      * Retrieve the list of torrents from qBittorrent.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
-        if (!$this->connected && !$this->connect()) {
+        if (! $this->connected && ! $this->connect()) {
             return [];
         }
 
@@ -130,7 +121,7 @@ class QBittorrentClient extends BaseTorrentClient
         return collect($data)->map(fn ($torrent) => new QBittorrentData([
             'infoHash' => strtoupper($torrent['hash']),
             'name' => $torrent['name'],
-            'progress' => (float)$torrent['progress'] * 100,
+            'progress' => (float) $torrent['progress'] * 100,
             'dlspeed' => $torrent['dlspeed'],
             'state' => $torrent['state'],
         ]))->all();
@@ -141,11 +132,14 @@ class QBittorrentClient extends BaseTorrentClient
      */
     public function startTorrent(string $infoHash): bool
     {
-        if (!$this->connected && !$this->connect()) return false;
+        if (! $this->connected && ! $this->connect()) {
+            return false;
+        }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->asForm()
             ->post($this->getUrl('torrents/resume'), ['hashes' => $infoHash]);
+
         return $response->successful();
     }
 
@@ -162,11 +156,14 @@ class QBittorrentClient extends BaseTorrentClient
      */
     public function pauseTorrent(string $infoHash): bool
     {
-        if (!$this->connected && !$this->connect()) return false;
+        if (! $this->connected && ! $this->connect()) {
+            return false;
+        }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->asForm()
             ->post($this->getUrl('torrents/pause'), ['hashes' => $infoHash]);
+
         return $response->successful();
     }
 
@@ -175,14 +172,17 @@ class QBittorrentClient extends BaseTorrentClient
      */
     public function removeTorrent(string $infoHash): bool
     {
-        if (!$this->connected && !$this->connect()) return false;
+        if (! $this->connected && ! $this->connect()) {
+            return false;
+        }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->asForm()
             ->post($this->getUrl('torrents/delete'), [
                 'hashes' => $infoHash,
-                'deleteFiles' => 'true'
+                'deleteFiles' => 'true',
             ]);
+
         return $response->successful();
     }
 
@@ -191,10 +191,13 @@ class QBittorrentClient extends BaseTorrentClient
      */
     public function getTorrentFiles(string $infoHash): array
     {
-        if (!$this->connected && !$this->connect()) return [];
+        if (! $this->connected && ! $this->connect()) {
+            return [];
+        }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->get($this->getUrl('torrents/files'), ['hash' => $infoHash]);
+
         return $response->json() ?? [];
     }
 
@@ -203,25 +206,23 @@ class QBittorrentClient extends BaseTorrentClient
      */
     public function isTorrentStarted(string $infoHash): bool
     {
-        if (!$this->connected && !$this->connect()) return false;
+        if (! $this->connected && ! $this->connect()) {
+            return false;
+        }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->get($this->getUrl('torrents/info'), ['hashes' => $infoHash]);
         $data = $response->json()[0] ?? null;
-        return $data && !in_array($data['state'], ['pausedDL', 'pausedUP', 'checkingResumeData']);
+
+        return $data && ! in_array($data['state'], ['pausedDL', 'pausedUP', 'checkingResumeData']);
     }
 
     /**
      * Add a magnet link to qBittorrent.
-     * 
-     * @param string $magnet
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool
     {
-        if (!$this->connected && !$this->connect()) {
+        if (! $this->connected && ! $this->connect()) {
             return false;
         }
 
@@ -229,8 +230,12 @@ class QBittorrentClient extends BaseTorrentClient
             'urls' => $magnet,
         ];
 
-        if ($dlPath) $params['savepath'] = $dlPath;
-        if ($label) $params['category'] = $label;
+        if ($dlPath) {
+            $params['savepath'] = $dlPath;
+        }
+        if ($label) {
+            $params['category'] = $label;
+        }
 
         $response = Http::withHeaders(['Cookie' => $this->cookie])
             ->asForm()
@@ -241,13 +246,6 @@ class QBittorrentClient extends BaseTorrentClient
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -257,25 +255,22 @@ class QBittorrentClient extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw data.
-     * 
-     * @param string $data
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
-        if (!$this->connected && !$this->connect()) {
+        if (! $this->connected && ! $this->connect()) {
             return false;
         }
 
         $request = Http::withHeaders(['Cookie' => $this->cookie])
-            ->attach('torrents', $data, $releaseName . '.torrent');
+            ->attach('torrents', $data, $releaseName.'.torrent');
 
-        if ($dlPath) $request->data(['savepath' => $dlPath]);
-        if ($label) $request->data(['category' => $label]);
+        if ($dlPath) {
+            $request->data(['savepath' => $dlPath]);
+        }
+        if ($label) {
+            $request->data(['category' => $label]);
+        }
 
         $response = $request->post($this->getUrl('torrents/add'));
 

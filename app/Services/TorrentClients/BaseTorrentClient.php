@@ -3,15 +3,14 @@
 namespace App\Services\TorrentClients;
 
 use App\Services\SettingsService;
-use Illuminate\Support\Str;
 
 /**
  * Base class for Torrent Client implementations.
- * 
+ *
  * Provides common functionality and properties for all torrent client drivers.
  * Drivers should extend this class and implement the abstract methods
  * to provide client-specific API logic.
- * 
+ *
  * @see BaseTorrentClient.js in DuckieTV-angular for original implementation.
  */
 abstract class BaseTorrentClient implements TorrentClientInterface
@@ -25,15 +24,11 @@ abstract class BaseTorrentClient implements TorrentClientInterface
     /** @var bool Connection status flag */
     protected bool $connected = false;
 
-    /** @var SettingsService */
     protected SettingsService $settings;
 
     /** @var string The unique ID of the client */
     protected string $id = '';
 
-    /**
-     * @param SettingsService $settings
-     */
     public function __construct(SettingsService $settings)
     {
         $this->settings = $settings;
@@ -42,8 +37,6 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Populate the config array using defined mappings.
-     * 
-     * @return void
      */
     public function readConfig(): void
     {
@@ -55,7 +48,7 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Define mappings between internal config keys and DuckieTV settings keys.
-     * 
+     *
      * @return array<string, string>
      */
     protected function getConfigMappings(): array
@@ -65,8 +58,6 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Get the unique ID of this torrent client.
-     * 
-     * @return string
      */
     public function getId(): string
     {
@@ -75,8 +66,6 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Get the display name of this torrent client.
-     * 
-     * @return string
      */
     public function getName(): string
     {
@@ -85,8 +74,6 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Check if the client is currently connected.
-     * 
-     * @return bool
      */
     public function isConnected(): bool
     {
@@ -95,14 +82,14 @@ abstract class BaseTorrentClient implements TorrentClientInterface
 
     /**
      * Attempts to connect to the torrent client's API.
-     * 
+     *
      * @return bool True if connection was successful
      */
     abstract public function connect(): bool;
 
     /**
      * Retrieve the list of active torrents from the client.
-     * 
+     *
      * @return array Array of torrent data
      */
     abstract public function getTorrents(): array;
@@ -112,9 +99,9 @@ abstract class BaseTorrentClient implements TorrentClientInterface
      *
      * This method sends a magnet URI to the torrent client for download.
      *
-     * @param string $magnet The magnet URI to add.
-     * @param string|null $dlPath Optional custom download path for the torrent.
-     * @param string|null $label Optional label or category to assign to the torrent.
+     * @param  string  $magnet  The magnet URI to add.
+     * @param  string|null  $dlPath  Optional custom download path for the torrent.
+     * @param  string|null  $label  Optional label or category to assign to the torrent.
      * @return bool True if the magnet link was successfully added, false otherwise.
      */
     abstract public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool;
@@ -125,11 +112,11 @@ abstract class BaseTorrentClient implements TorrentClientInterface
      * This method instructs the torrent client to download a .torrent file from a given URL
      * and start the torrent.
      *
-     * @param string $url The URL pointing to the .torrent file.
-     * @param string $infoHash The infohash of the torrent for verification.
-     * @param string $releaseName The name of the release, used for display or folder naming.
-     * @param string|null $dlPath Optional custom download path for the torrent.
-     * @param string|null $label Optional label or category to assign to the torrent.
+     * @param  string  $url  The URL pointing to the .torrent file.
+     * @param  string  $infoHash  The infohash of the torrent for verification.
+     * @param  string  $releaseName  The name of the release, used for display or folder naming.
+     * @param  string|null  $dlPath  Optional custom download path for the torrent.
+     * @param  string|null  $label  Optional label or category to assign to the torrent.
      * @return bool True if the torrent was successfully added by URL, false otherwise.
      */
     abstract public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;
@@ -139,11 +126,11 @@ abstract class BaseTorrentClient implements TorrentClientInterface
      *
      * This method sends the raw content of a .torrent file directly to the client.
      *
-     * @param string $data The raw binary content of the .torrent file.
-     * @param string $infoHash The infohash of the torrent for verification.
-     * @param string $releaseName The name of the release, used for display or folder naming.
-     * @param string|null $dlPath Optional custom download path for the torrent.
-     * @param string|null $label Optional label or category to assign to the torrent.
+     * @param  string  $data  The raw binary content of the .torrent file.
+     * @param  string  $infoHash  The infohash of the torrent for verification.
+     * @param  string  $releaseName  The name of the release, used for display or folder naming.
+     * @param  string|null  $dlPath  Optional custom download path for the torrent.
+     * @param  string|null  $label  Optional label or category to assign to the torrent.
      * @return bool True if the torrent was successfully added by upload, false otherwise.
      */
     abstract public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool;

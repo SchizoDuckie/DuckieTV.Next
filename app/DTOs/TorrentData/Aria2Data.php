@@ -19,11 +19,17 @@ namespace App\DTOs\TorrentData;
 class Aria2Data extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?string $gid = null;
+
     public ?string $status = null;
+
     public ?float $progress = null;
+
     public ?int $downloadSpeed = null;
+
     public ?string $dir = null;
 
     /**
@@ -98,8 +104,6 @@ class Aria2Data extends TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

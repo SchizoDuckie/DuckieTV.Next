@@ -24,10 +24,15 @@ namespace App\DTOs\TorrentData;
 class KtorrentData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?int $id = null;
+
     public ?string $percentage = null;
+
     public ?string $download_rate = null;
+
     public ?string $status = null;
 
     /**
@@ -65,7 +70,7 @@ class KtorrentData extends TorrentData
      */
     public function getDownloadSpeed(): int
     {
-        if (!$this->download_rate) {
+        if (! $this->download_rate) {
             return 0;
         }
 
@@ -116,8 +121,6 @@ class KtorrentData extends TorrentData
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
      * Valid started states: 'stalled', 'downloading'.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

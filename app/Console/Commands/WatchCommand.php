@@ -29,7 +29,7 @@ class WatchCommand extends Command
     {
         $query = $this->argument('query');
 
-        if (!$query) {
+        if (! $query) {
             $query = $this->ask('Search for a show to mark an episode watched:');
         }
 
@@ -37,6 +37,7 @@ class WatchCommand extends Command
 
         if ($series->isEmpty()) {
             $this->error("No favorite shows found matching '{$query}'.");
+
             return 1;
         }
 
@@ -64,11 +65,13 @@ class WatchCommand extends Command
 
         if ($episodes->isEmpty()) {
             $this->warn("No unwatched (aired) episodes found for {$serie->name}.");
+
             return 0;
         }
 
         $epOptions = $episodes->mapWithKeys(function ($ep) {
-            $label = sprintf("%s - %s", $ep->formatted_episode, $ep->episodename);
+            $label = sprintf('%s - %s', $ep->formatted_episode, $ep->episodename);
+
             return [$ep->id => $label];
         })->toArray();
 
@@ -83,7 +86,7 @@ class WatchCommand extends Command
         $this->info("Marking {$episode->formatted_episode} as watched...");
         $episode->markWatched();
 
-        $this->info("<fg=green;options=bold>Done!</>");
+        $this->info('<fg=green;options=bold>Done!</>');
 
         return 0;
     }

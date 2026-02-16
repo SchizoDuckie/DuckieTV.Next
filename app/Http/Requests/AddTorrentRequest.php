@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validates requests for adding a torrent to the active client.
- * 
+ *
  * Supports adding via magnet URI, remote .torrent URL, or (eventually) binary upload.
  */
 class AddTorrentRequest extends FormRequest
@@ -33,5 +33,4 @@ class AddTorrentRequest extends FormRequest
             'label' => 'nullable|string|max:255',
         ];
     }
-
 }

@@ -13,7 +13,7 @@ class GenericSearchEngineTest extends TestCase
         'mirror' => 'https://mock.engine',
         'includeBaseURL' => true,
         'endpoints' => [
-            'search' => '/search/%s'
+            'search' => '/search/%s',
         ],
         'selectors' => [
             'resultContainer' => '.result',
@@ -22,8 +22,8 @@ class GenericSearchEngineTest extends TestCase
             'size' => ['.size', 'innerText'],
             'seeders' => ['.seeders', 'innerText'],
             'leechers' => ['.leechers', 'innerText'],
-            'detailUrl' => ['.title', 'href']
-        ]
+            'detailUrl' => ['.title', 'href'],
+        ],
     ];
 
     public function test_it_can_parse_search_results()
@@ -46,14 +46,14 @@ class GenericSearchEngineTest extends TestCase
         ';
 
         Http::fake([
-            'https://mock.engine/search/test_query' => Http::response($html, 200)
+            'https://mock.engine/search/test_query' => Http::response($html, 200),
         ]);
 
         $engine = new GenericSearchEngine($this->mockConfig);
         $results = $engine->search('test_query');
 
         $this->assertCount(2, $results);
-        
+
         $this->assertEquals('Release 1', $results[0]['releasename']);
         $this->assertEquals('1,500.00 MB', $results[0]['size']);
         $this->assertEquals(100, $results[0]['seeders']);
@@ -68,7 +68,7 @@ class GenericSearchEngineTest extends TestCase
     public function test_it_handles_size_conversion()
     {
         $engine = new GenericSearchEngine($this->mockConfig);
-        
+
         // Use reflection to test protected sizeToMB method
         $reflection = new \ReflectionClass(GenericSearchEngine::class);
         $method = $reflection->getMethod('sizeToMB');

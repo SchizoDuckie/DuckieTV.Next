@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Episode;
 use App\Models\Serie;
-use Illuminate\Support\Collection;
 
 /**
  * CalendarService - Manages calendar data structure for episode scheduling.
@@ -52,8 +51,8 @@ class CalendarService
      * Ported from CalendarEvents.js getEventsForDateRange() (lines 152-165)
      * combined with setEvents() (lines 177-190).
      *
-     * @param \Carbon\Carbon $start Start date
-     * @param \Carbon\Carbon $end   End date
+     * @param  \Carbon\Carbon  $start  Start date
+     * @param  \Carbon\Carbon  $end  End date
      * @return array<string, array> Hash of dateString => [events], sorted per date
      */
     public function getEventsForDateRange(\Carbon\Carbon $start, \Carbon\Carbon $end): array
@@ -69,18 +68,18 @@ class CalendarService
 
         foreach ($episodes as $episode) {
             $serie = $episode->serie;
-            if (!$serie) {
+            if (! $serie) {
                 continue;
             }
 
             // Filter specials based on settings (unless serie overrides with ignoreHideSpecials)
-            if (!$showSpecials && $episode->seasonnumber == 0 && !$serie->ignoreHideSpecials) {
+            if (! $showSpecials && $episode->seasonnumber == 0 && ! $serie->ignoreHideSpecials) {
                 continue;
             }
 
             $date = \Carbon\Carbon::createFromTimestampMs($episode->firstaired)->toDateString();
 
-            if (!isset($events[$date])) {
+            if (! isset($events[$date])) {
                 $events[$date] = [];
             }
 
@@ -104,7 +103,7 @@ class CalendarService
      * Get events for a single date.
      * Ported from CalendarEvents.js getEvents() (lines 238-241).
      *
-     * @param \Carbon\Carbon $date The date to get events for
+     * @param  \Carbon\Carbon  $date  The date to get events for
      * @return array List of events for this date
      */
     public function getEvents(\Carbon\Carbon $date): array
@@ -124,7 +123,7 @@ class CalendarService
      * Ported from CalendarEvents.js getSeries() (lines 270-281).
      * Returns array sorted by the first episode's air time per serie.
      *
-     * @param \Carbon\Carbon $date The date to get series for
+     * @param  \Carbon\Carbon  $date  The date to get series for
      * @return array<array> Array of [event, event, ...] arrays, one per serie, sorted by air time
      */
     public function getSeries(\Carbon\Carbon $date): array
@@ -134,7 +133,7 @@ class CalendarService
 
         foreach ($events as $event) {
             $serieId = $event['serie_id'];
-            if (!isset($bySerieId[$serieId])) {
+            if (! isset($bySerieId[$serieId])) {
                 $bySerieId[$serieId] = [];
             }
             $bySerieId[$serieId][] = $event;
@@ -154,8 +153,8 @@ class CalendarService
      * Mark all aired episodes on a given day as watched.
      * Ported from CalendarEvents.js markDayWatched() (lines 214-224).
      *
-     * @param \Carbon\Carbon $day              The date whose episodes should be marked
-     * @param bool           $downloadedPaired When true, also marks episodes as downloaded
+     * @param  \Carbon\Carbon  $day  The date whose episodes should be marked
+     * @param  bool  $downloadedPaired  When true, also marks episodes as downloaded
      */
     public function markDayWatched(\Carbon\Carbon $day, bool $downloadedPaired = true): void
     {
@@ -172,7 +171,7 @@ class CalendarService
      * Mark all aired episodes on a given day as downloaded.
      * Ported from CalendarEvents.js markDayDownloaded() (lines 225-234).
      *
-     * @param \Carbon\Carbon $day The date whose episodes should be marked
+     * @param  \Carbon\Carbon  $day  The date whose episodes should be marked
      */
     public function markDayDownloaded(\Carbon\Carbon $day): void
     {
@@ -209,7 +208,7 @@ class CalendarService
 
         foreach ($episodes as $episode) {
             $serie = $episode->serie;
-            if (!$serie || !$serie->displaycalendar) {
+            if (! $serie || ! $serie->displaycalendar) {
                 continue;
             }
 
@@ -228,7 +227,7 @@ class CalendarService
      * Get episode counts per month for a given year.
      * Used by the year overview calendar view to show activity per month.
      *
-     * @param int $year The year to get counts for
+     * @param  int  $year  The year to get counts for
      * @return array<int, int> Month number (1-12) => episode count
      */
     public function getEpisodeCountsByMonth(int $year): array
@@ -258,13 +257,13 @@ class CalendarService
      *
      * Ported from CalendarEvents.js calendarEpisodeSort() (lines 52-69).
      *
-     * @param array $a First event
-     * @param array $b Second event
+     * @param  array  $a  First event
+     * @param  array  $b  Second event
      * @return int Sort comparison result (-1, 0, 1)
      */
     private function calendarEpisodeSort(array $a, array $b): int
     {
-        if (!isset($a['serie']) || !isset($b['serie'])) {
+        if (! isset($a['serie']) || ! isset($b['serie'])) {
             return 0;
         }
 
@@ -275,8 +274,12 @@ class CalendarService
             ? strtotime($b['episode']->firstaired_iso)
             : 0;
 
-        if ($ad < $bd) return -1;
-        if ($ad > $bd) return 1;
+        if ($ad < $bd) {
+            return -1;
+        }
+        if ($ad > $bd) {
+            return 1;
+        }
 
         // Same air time: sort by episode number within same serie, or by name across series
         if ($a['serie_id'] === $b['serie_id']) {

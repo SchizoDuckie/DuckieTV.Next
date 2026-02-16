@@ -16,13 +16,21 @@ namespace App\DTOs\TorrentData;
 class RTorrentData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?int $bytes_done = null;
+
     public ?int $size_bytes = null;
+
     public ?int $downloadSpeed = null;
+
     public ?float $progress = null;
+
     public ?int $state = null;
+
     public ?string $base_filename = null;
+
     public ?string $directory_base = null;
 
     /**
@@ -61,6 +69,7 @@ class RTorrentData extends TorrentData
         if ($size <= 0) {
             return 0;
         }
+
         return $this->round(($this->bytes_done ?? 0) / $size * 100, 1);
     }
 
@@ -106,8 +115,6 @@ class RTorrentData extends TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

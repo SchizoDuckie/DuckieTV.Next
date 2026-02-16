@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Controllers;
 
-use App\Services\TorrentClientService;
 use App\Services\TorrentClients\TorrentClientInterface;
+use App\Services\TorrentClientService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -30,13 +30,13 @@ class TorrentAddTest extends TestCase
         $this->app->instance(TorrentClientService::class, $mockService);
 
         $response = $this->postJson(route('torrents.add'), [
-            'magnet' => 'magnet:?xt=urn:btih:abc'
+            'magnet' => 'magnet:?xt=urn:btih:abc',
         ]);
 
         $response->assertStatus(200);
         $response->assertJson([
             'success' => true,
-            'message' => 'Torrent added successfully'
+            'message' => 'Torrent added successfully',
         ]);
     }
 
@@ -55,7 +55,7 @@ class TorrentAddTest extends TestCase
         $response = $this->postJson(route('torrents.add'), [
             'url' => 'http://example.com/file.torrent',
             'infoHash' => '1234567890123456789012345678901234567890',
-            'releaseName' => 'Test.Release'
+            'releaseName' => 'Test.Release',
         ]);
 
         $response->assertStatus(200);
@@ -69,7 +69,7 @@ class TorrentAddTest extends TestCase
         $this->app->instance(TorrentClientService::class, $mockService);
 
         $response = $this->postJson(route('torrents.add'), [
-            'magnet' => 'magnet:?xt=urn:btih:abc'
+            'magnet' => 'magnet:?xt=urn:btih:abc',
         ]);
 
         $response->assertStatus(422);
@@ -86,7 +86,7 @@ class TorrentAddTest extends TestCase
         $this->app->instance(TorrentClientService::class, $mockService);
 
         $response = $this->postJson(route('torrents.add'), [
-            'magnet' => 'magnet:?xt=urn:btih:abc'
+            'magnet' => 'magnet:?xt=urn:btih:abc',
         ]);
 
         $response->assertStatus(422);
@@ -96,7 +96,7 @@ class TorrentAddTest extends TestCase
     public function test_add_endpoint_validates_required_fields_for_url()
     {
         $response = $this->postJson(route('torrents.add'), [
-            'url' => 'http://example.com/file.torrent'
+            'url' => 'http://example.com/file.torrent',
             // Missing infoHash and releaseName
         ]);
 
@@ -107,7 +107,7 @@ class TorrentAddTest extends TestCase
     public function test_add_endpoint_validates_magnet_prefix()
     {
         $response = $this->postJson(route('torrents.add'), [
-            'magnet' => 'not-a-magnet'
+            'magnet' => 'not-a-magnet',
         ]);
 
         $response->assertStatus(422);

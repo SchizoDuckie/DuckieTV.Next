@@ -16,6 +16,7 @@ namespace App\DTOs\TorrentData;
 class NoneData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $hash = null;
 
     /**
@@ -85,8 +86,6 @@ class NoneData extends TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent. Always returns false.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

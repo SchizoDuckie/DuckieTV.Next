@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 class FavoritesService
 {
     private SettingsService $settings;
+
     private TMDBService $tmdb;
 
     /**
@@ -48,10 +49,10 @@ class FavoritesService
      * Add or update a show as a favorite. Creates/updates the Serie, its Seasons,
      * and all Episodes from Trakt API data.
      *
-     * @param array  $data        Show data from TraktService::serie()
-     * @param array  $watched     Optional watched episode data for backup restore
-     * @param bool   $useTraktId  When true, look up existing serie by trakt_id
-     * @param callable|null $onProgress  Callback for progress reporting: function($processed, $total, $season)
+     * @param  array  $data  Show data from TraktService::serie()
+     * @param  array  $watched  Optional watched episode data for backup restore
+     * @param  bool  $useTraktId  When true, look up existing serie by trakt_id
+     * @param  callable|null  $onProgress  Callback for progress reporting: function($processed, $total, $season)
      * @return Serie The created or updated Serie model
      */
     public function addFavorite(array $data, array $watched = [], bool $useTraktId = false, ?callable $onProgress = null): Serie
@@ -68,8 +69,8 @@ class FavoritesService
         }
 
         $serie = $useTraktId
-            ? Serie::where('trakt_id', $data['trakt_id'])->first() ?? new Serie()
-            : Serie::where('tvdb_id', $data['tvdb_id'])->first() ?? new Serie();
+            ? Serie::where('trakt_id', $data['trakt_id'])->first() ?? new Serie
+            : Serie::where('tvdb_id', $data['tvdb_id'])->first() ?? new Serie;
 
         $this->fillSerie($serie, $data);
 
@@ -133,7 +134,7 @@ class FavoritesService
 
         // Ratings (only if download.ratings is enabled)
         if ($this->shouldDownloadRatings() && isset($data['rating'])) {
-            if (!$serie->ratingcount || ($serie->ratingcount + 25 > ($data['votes'] ?? 0))) {
+            if (! $serie->ratingcount || ($serie->ratingcount + 25 > ($data['votes'] ?? 0))) {
                 $serie->rating = (int) round(($data['rating'] ?? 0) * 10);
                 $serie->ratingcount = $data['votes'] ?? null;
             }
@@ -152,6 +153,7 @@ class FavoritesService
             $serie->actors = collect($data['people']['cast'])->map(function (array $actor) {
                 $name = $actor['person']['name'] ?? '';
                 $character = $actor['character'] ?? '';
+
                 return $character !== '' ? "{$name} ({$character})" : $name;
             })->implode('|');
         }
@@ -171,7 +173,7 @@ class FavoritesService
 
         // Ratings
         if ($this->shouldDownloadRatings() && isset($data['rating'])) {
-            if (!$episode->ratingcount || ($episode->ratingcount + 25 > ($data['votes'] ?? 0))) {
+            if (! $episode->ratingcount || ($episode->ratingcount + 25 > ($data['votes'] ?? 0))) {
                 $episode->rating = (int) round(($data['rating'] ?? 0) * 10);
                 $episode->ratingcount = $data['votes'] ?? null;
             }
@@ -191,7 +193,7 @@ class FavoritesService
         }
 
         // If episode hasn't aired yet and isn't leaked, reset download/watched state
-        if (!$episode->isLeaked() && ($episode->firstaired === 0 || $episode->firstaired > now()->getTimestampMs())) {
+        if (! $episode->isLeaked() && ($episode->firstaired === 0 || $episode->firstaired > now()->getTimestampMs())) {
             $episode->downloaded = 0;
             $episode->watched = 0;
             $episode->watchedAt = null;
@@ -253,7 +255,7 @@ class FavoritesService
 
         foreach ($seasons as $seasonData) {
             $number = $seasonData['number'] ?? 0;
-            $season = $seasonCache[$number] ?? new Season();
+            $season = $seasonCache[$number] ?? new Season;
 
             $season->seasonnumber = $number;
             $season->serie_id = $serie->id;
@@ -262,7 +264,7 @@ class FavoritesService
             $season->tmdb_id = $seasonData['tmdb_id'] ?? null;
 
             if ($this->shouldDownloadRatings() && isset($seasonData['rating'])) {
-                if (!$season->ratingcount || ($season->ratingcount + 25 > ($seasonData['votes'] ?? 0))) {
+                if (! $season->ratingcount || ($season->ratingcount + 25 > ($seasonData['votes'] ?? 0))) {
                     $season->ratings = (int) round(($seasonData['rating'] ?? 0) * 10);
                     $season->ratingcount = $seasonData['votes'] ?? null;
                 }
@@ -283,7 +285,7 @@ class FavoritesService
             $seasonNumber = $seasonData['number'] ?? 0;
             $season = $seasonCache[$seasonNumber] ?? null;
 
-            if (!$season) {
+            if (! $season) {
                 continue;
             }
 
@@ -295,7 +297,7 @@ class FavoritesService
                 $traktId = $episodeData['trakt_id'] ?? null;
                 $episode = ($traktId && isset($episodeCache[$traktId]))
                     ? $episodeCache[$traktId]
-                    : new Episode();
+                    : new Episode;
 
                 $this->fillEpisode($episode, $episodeData, $season, $serie, $watched);
                 $episode->save();

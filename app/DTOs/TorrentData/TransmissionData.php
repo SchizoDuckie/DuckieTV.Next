@@ -17,11 +17,17 @@ namespace App\DTOs\TorrentData;
 class TransmissionData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?int $id = null;
+
     public ?float $progress = null;
+
     public ?int $downloadSpeed = null;
+
     public ?int $status = null;
+
     public ?string $downloadDir = null;
 
     /**
@@ -97,8 +103,6 @@ class TransmissionData extends TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

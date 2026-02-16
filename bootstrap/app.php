@@ -4,9 +4,15 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-if (!defined('SIGINT')) define('SIGINT', 2);
-if (!defined('SIGTERM')) define('SIGTERM', 15);
-if (!defined('SIGTSTP')) define('SIGTSTP', 20);
+if (! defined('SIGINT')) {
+    define('SIGINT', 2);
+}
+if (! defined('SIGTERM')) {
+    define('SIGTERM', 15);
+}
+if (! defined('SIGTSTP')) {
+    define('SIGTSTP', 20);
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(

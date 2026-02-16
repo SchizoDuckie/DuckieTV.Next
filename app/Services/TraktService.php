@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Exceptions\RateLimitException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use App\Exceptions\RateLimitException;
 
 /**
  * TraktService - API wrapper for Trakt.tv V2 API.
@@ -44,22 +44,22 @@ class TraktService
     // dtv_refresh parameter busts CDN caches daily.
 
     private array $endpoints = [
-        'people'            => 'shows/%s/people',
-        'serie'             => 'shows/%s?extended=full',
-        'seasons'           => 'shows/%s/seasons?extended=full',
-        'episodes'          => 'shows/%s/seasons/%s/episodes?extended=full',
-        'search'            => 'search/show?extended=full&limit=100&fields=title,aliases&query=%s',
-        'trending'          => 'shows/trending?extended=full&limit=500',
-        'tvdb_id'           => 'search/tvdb/%s?type=show',
-        'trakt_id'          => 'search/trakt/%s?type=show',
-        'login'             => 'auth/login',
-        'config'            => 'users/settings',
-        'token'             => 'oauth/token',
-        'watched'           => 'sync/watched/shows?limit=10000',
-        'episode_seen'      => 'sync/history',
-        'episode_unseen'    => 'sync/history/remove',
-        'user_shows'        => 'sync/collection/shows?limit=10000',
-        'add_collection'    => 'sync/collection',
+        'people' => 'shows/%s/people',
+        'serie' => 'shows/%s?extended=full',
+        'seasons' => 'shows/%s/seasons?extended=full',
+        'episodes' => 'shows/%s/seasons/%s/episodes?extended=full',
+        'search' => 'search/show?extended=full&limit=100&fields=title,aliases&query=%s',
+        'trending' => 'shows/trending?extended=full&limit=500',
+        'tvdb_id' => 'search/tvdb/%s?type=show',
+        'trakt_id' => 'search/trakt/%s?type=show',
+        'login' => 'auth/login',
+        'config' => 'users/settings',
+        'token' => 'oauth/token',
+        'watched' => 'sync/watched/shows?limit=10000',
+        'episode_seen' => 'sync/history',
+        'episode_unseen' => 'sync/history/remove',
+        'user_shows' => 'sync/collection/shows?limit=10000',
+        'add_collection' => 'sync/collection',
         'remove_collection' => 'sync/collection/remove',
     ];
 
@@ -90,7 +90,6 @@ class TraktService
         $this->throttlingEnabled = $enabled;
     }
 
-
     /**
      * Sleep if throttling is enabled.
      */
@@ -109,9 +108,9 @@ class TraktService
      *
      * Ported from TraktTVv2.js getUrl() (lines 141-144).
      *
-     * @param string      $type   Endpoint key from $endpoints
-     * @param string|null $param  First URL parameter (e.g. show ID/slug)
-     * @param string|null $param2 Second URL parameter (e.g. season number)
+     * @param  string  $type  Endpoint key from $endpoints
+     * @param  string|null  $param  First URL parameter (e.g. show ID/slug)
+     * @param  string|null  $param2  Second URL parameter (e.g. season number)
      */
     private function getUrl(string $type, ?string $param = null, ?string $param2 = null): string
     {
@@ -127,7 +126,7 @@ class TraktService
 
         $separator = str_contains($path, '?') ? '&' : '?';
 
-        return config('services.trakt.api_endpoint') . $path . $separator . 'dtv_refresh=' . $dtvRefresh;
+        return config('services.trakt.api_endpoint').$path.$separator.'dtv_refresh='.$dtvRefresh;
     }
 
     // ─── HTTP Headers ────────────────────────────────────────────
@@ -138,7 +137,7 @@ class TraktService
      *
      * Ported from TraktTVv2.js request headers block (lines 170-177).
      *
-     * @param bool $withAuth Include Bearer authorization token
+     * @param  bool  $withAuth  Include Bearer authorization token
      */
     private function getHeaders(bool $withAuth = false): array
     {
@@ -151,7 +150,7 @@ class TraktService
         if ($withAuth) {
             $token = $this->settings->get('trakttv.token');
             if ($token) {
-                $headers['Authorization'] = 'Bearer ' . $token;
+                $headers['Authorization'] = 'Bearer '.$token;
             }
         }
 
@@ -172,11 +171,12 @@ class TraktService
      * - 429 → Rate limited, sleep for Retry-After seconds then retry
      * - 502/504 → Cloudflare error, sleep for Retry-After seconds then retry
      *
-     * @param string      $type   Endpoint key
-     * @param string|null $param  First URL parameter
-     * @param string|null $param2 Second URL parameter
-     * @param int         $retry  Current retry count (internal, prevents infinite loops)
+     * @param  string  $type  Endpoint key
+     * @param  string|null  $param  First URL parameter
+     * @param  string|null  $param2  Second URL parameter
+     * @param  int  $retry  Current retry count (internal, prevents infinite loops)
      * @return mixed Parsed response data
+     *
      * @throws \RuntimeException On unrecoverable HTTP errors
      */
     private function apiGet(string $type, ?string $param = null, ?string $param2 = null, int $retry = 0): mixed
@@ -206,17 +206,17 @@ class TraktService
      *
      * Ported from TraktTVv2.js apiPost() (lines 241-285).
      *
-     * @param string $type  Endpoint key
-     * @param array  $data  POST body data
-     * @param int    $retry Current retry count (internal)
+     * @param  string  $type  Endpoint key
+     * @param  array  $data  POST body data
+     * @param  int  $retry  Current retry count (internal)
      * @return mixed Response data
+     *
      * @throws \RuntimeException On unrecoverable HTTP errors
      */
     private function apiPost(string $type, array $data = [], int $retry = 0): mixed
     {
         $this->checkRateLimit();
         $url = $this->getUrl($type);
-
 
         $response = Http::withHeaders($this->getHeaders(true))
             ->timeout(120)
@@ -233,14 +233,15 @@ class TraktService
      * Centralized error handler for both GET and POST requests.
      * Implements the retry logic from TraktTVv2.js for various HTTP error codes.
      *
-     * @param \Illuminate\Http\Client\Response $response HTTP response
-     * @param string      $type    Endpoint key
-     * @param string|null $param   First URL parameter (GET only)
-     * @param string|null $param2  Second URL parameter (GET only)
-     * @param int         $retry   Current retry count
-     * @param string      $method  HTTP method ('GET' or 'POST')
-     * @param array       $data    POST body data (POST only)
+     * @param  \Illuminate\Http\Client\Response  $response  HTTP response
+     * @param  string  $type  Endpoint key
+     * @param  string|null  $param  First URL parameter (GET only)
+     * @param  string|null  $param2  Second URL parameter (GET only)
+     * @param  int  $retry  Current retry count
+     * @param  string  $method  HTTP method ('GET' or 'POST')
+     * @param  array  $data  POST body data (POST only)
      * @return mixed Parsed response on successful retry
+     *
      * @throws \RuntimeException On unrecoverable errors or max retries exceeded
      */
     private function handleError(
@@ -261,6 +262,7 @@ class TraktService
         if ($status === 401) {
             Log::warning('Trakt API: Token expired, renewing...');
             $this->renewToken();
+
             return $method === 'POST'
                 ? $this->apiPost($type, $data, $retry + 1)
                 : $this->apiGet($type, $param, $param2, $retry + 1);
@@ -268,11 +270,13 @@ class TraktService
 
         if ($status === 420) {
             Log::error('Trakt API 420: Limit exceeded. See https://github.com/SchizoDuckie/DuckieTV/issues/1447');
+
             return null;
         }
 
         if ($status === 423) {
             Log::error('Trakt API 423: User account locked. Email support@trakt.tv to fix your account.');
+
             return null;
         }
 
@@ -280,20 +284,18 @@ class TraktService
             $retryAfter = (int) ($response->header('Retry-After') ?: 1);
             // Exponential backoff: retryAfter * (2 ^ retry)
             $backoff = $retryAfter * pow(2, $retry);
-            
+
             // Shared global block
             Cache::put('trakt_blocked_until', time() + $backoff, $backoff + 120);
 
-            throw new RateLimitException("Trakt API Rate Limited", $status, $backoff);
+            throw new RateLimitException('Trakt API Rate Limited', $status, $backoff);
         }
-
 
         if ($status >= 500) {
-            Log::error("Trakt API Server Error ({$status}) on endpoint '{$type}'. Response body: " . $response->body());
+            Log::error("Trakt API Server Error ({$status}) on endpoint '{$type}'. Response body: ".$response->body());
         }
 
-        throw new \RuntimeException("Trakt API error {$status}: " . $response->body());
-
+        throw new \RuntimeException("Trakt API error {$status}: ".$response->body());
     }
 
     /**
@@ -304,10 +306,9 @@ class TraktService
         $blockedUntil = Cache::get('trakt_blocked_until');
         if ($blockedUntil && time() < $blockedUntil) {
             $seconds = $blockedUntil - time();
-            throw new RateLimitException("Trakt API: Global block active", 429, $seconds);
+            throw new RateLimitException('Trakt API: Global block active', 429, $seconds);
         }
     }
-
 
     // ─── Parsers ─────────────────────────────────────────────────
 
@@ -315,24 +316,24 @@ class TraktService
      * Route response data through the appropriate parser.
      * Ported from TraktTVv2.js getParser() (lines 149-153).
      *
-     * @param string $type Endpoint key matching a parser method
-     * @param mixed  $data Raw JSON response data
+     * @param  string  $type  Endpoint key matching a parser method
+     * @param  mixed  $data  Raw JSON response data
      * @return mixed Parsed data
      */
     private function parse(string $type, mixed $data): mixed
     {
         return match ($type) {
-            'serie'     => $this->parseShow($data),
-            'seasons'   => $this->parseSeasons($data),
-            'episodes'  => $this->parseEpisodes($data),
-            'search'    => $this->parseSearch($data),
-            'trending'  => $this->parseTrending($data),
-            'tvdb_id'   => $this->parseTvdbId($data),
-            'trakt_id'  => $this->parseTraktId($data),
-            'watched'    => $this->parseWatched($data),
+            'serie' => $this->parseShow($data),
+            'seasons' => $this->parseSeasons($data),
+            'episodes' => $this->parseEpisodes($data),
+            'search' => $this->parseSearch($data),
+            'trending' => $this->parseTrending($data),
+            'tvdb_id' => $this->parseTvdbId($data),
+            'trakt_id' => $this->parseTraktId($data),
+            'watched' => $this->parseWatched($data),
             'user_shows' => $this->parseUserCollection($data),
-            'people'    => $data, // people parser just returns data as-is
-            default     => $data,
+            'people' => $data, // people parser just returns data as-is
+            default => $data,
         };
     }
 
@@ -343,14 +344,14 @@ class TraktService
      *
      * Ported from TraktTVv2.js parsers.trakt() (lines 40-50).
      *
-     * @param array $item Raw Trakt object with nested 'ids' key
+     * @param  array  $item  Raw Trakt object with nested 'ids' key
      * @return array Normalized object with flattened ID fields
      */
     private function normalizeIds(array $item): array
     {
         if (isset($item['ids'])) {
             foreach ($item['ids'] as $key => $value) {
-                $item[$key . '_id'] = $value;
+                $item[$key.'_id'] = $value;
             }
         }
 
@@ -383,7 +384,7 @@ class TraktService
      * Parse episodes list response. Deduplicates by episode number and filters out episode 0.
      * Ported from TraktTVv2.js parsers.episodes() (lines 69-80).
      *
-     * @param array $data Raw episodes array from Trakt
+     * @param  array  $data  Raw episodes array from Trakt
      * @return array Deduplicated, normalized episodes
      */
     private function parseEpisodes(array $data): array
@@ -464,6 +465,7 @@ class TraktService
         return array_map(function (array $item) {
             $show = $this->normalizeIds($item['show']);
             $show['seasons'] = $item['seasons'] ?? [];
+
             return $show;
         }, $data);
     }
@@ -477,6 +479,7 @@ class TraktService
         return array_map(function (array $item) {
             $show = $this->normalizeIds($item['show']);
             $show['seasons'] = $item['seasons'] ?? [];
+
             return $show;
         }, $data);
     }
@@ -490,10 +493,11 @@ class TraktService
      * Ported from TraktTVv2.js service.serie() (lines 293-317).
      * id can be: Trakt.tv ID, Trakt.tv slug, or IMDB ID.
      *
-     * @param string     $id           Show identifier (Trakt ID, slug, or IMDB ID)
-     * @param array|null $existingSerie Pre-fetched serie data (skips initial API call)
-     * @param bool       $seriesOnly   When true, return only series data (no seasons/episodes)
+     * @param  string  $id  Show identifier (Trakt ID, slug, or IMDB ID)
+     * @param  array|null  $existingSerie  Pre-fetched serie data (skips initial API call)
+     * @param  bool  $seriesOnly  When true, return only series data (no seasons/episodes)
      * @return array Show data with people, seasons, and episodes attached
+     *
      * @see https://trakt.docs.apiary.io/#reference/shows/summary/get-a-single-show
      */
     public function serie(string $id, ?array $existingSerie = null, bool $seriesOnly = false): array
@@ -518,8 +522,9 @@ class TraktService
      * Get all seasons for a show.
      * Ported from TraktTVv2.js service.seasons() (lines 322-325).
      *
-     * @param string $id Show identifier (Trakt ID, slug, or IMDB ID)
+     * @param  string  $id  Show identifier (Trakt ID, slug, or IMDB ID)
      * @return array List of season objects with flattened IDs
+     *
      * @see https://trakt.docs.apiary.io/#reference/seasons/summary/get-all-seasons-for-a-show
      */
     public function seasons(string $id): array
@@ -531,9 +536,10 @@ class TraktService
      * Get all episodes for a specific season of a show.
      * Ported from TraktTVv2.js service.episodes() (lines 332-334).
      *
-     * @param string $id            Show identifier (Trakt ID, slug, or IMDB ID)
-     * @param string $seasonNumber  Season number
+     * @param  string  $id  Show identifier (Trakt ID, slug, or IMDB ID)
+     * @param  string  $seasonNumber  Season number
      * @return array List of episode objects, deduplicated by episode number
+     *
      * @see https://trakt.docs.apiary.io/#reference/episodes/summary
      */
     public function episodes(string $id, string $seasonNumber): array
@@ -545,8 +551,9 @@ class TraktService
      * Get all people (cast and crew) for a show.
      * Ported from TraktTVv2.js service.people() (lines 340-342).
      *
-     * @param string $id Show identifier (Trakt ID, slug, or IMDB ID)
+     * @param  string  $id  Show identifier (Trakt ID, slug, or IMDB ID)
      * @return array People data with cast and crew arrays
+     *
      * @see https://trakt.docs.apiary.io/#reference/shows/people/get-all-people-for-a-show
      */
     public function people(string $id): array
@@ -558,7 +565,7 @@ class TraktService
      * Search for shows by title.
      * Ported from TraktTVv2.js service.search() (lines 343-350).
      *
-     * @param string $query Search query string
+     * @param  string  $query  Search query string
      * @return array List of matching shows with flattened IDs
      */
     public function search(string $query): array
@@ -573,12 +580,12 @@ class TraktService
      * Ported from TraktTVv2.js service.trending() (lines 361-386).
      * Cache is stored in settings table as 'trakttv.trending.cache' (JSON-encoded).
      *
-     * @param bool $noCache When true, bypass cache and fetch from API
+     * @param  bool  $noCache  When true, bypass cache and fetch from API
      * @return array List of trending shows
      */
     public function trending(bool $noCache = false): array
     {
-        if (!$noCache) {
+        if (! $noCache) {
             $cached = $this->settings->get('trakttv.trending.cache');
             if ($cached) {
                 return is_string($cached) ? json_decode($cached, true) : $cached;
@@ -596,9 +603,10 @@ class TraktService
      * Resolve a show by TVDB ID or Trakt ID.
      * Ported from TraktTVv2.js service.resolveID() (lines 393-400).
      *
-     * @param string $id          The TVDB or Trakt ID to look up
-     * @param bool   $useTraktId  When true, search by trakt_id instead of tvdb_id
+     * @param  string  $id  The TVDB or Trakt ID to look up
+     * @param  bool  $useTraktId  When true, search by trakt_id instead of tvdb_id
      * @return array Show data with flattened IDs
+     *
      * @throws \RuntimeException When no results found
      */
     public function resolveID(string $id, bool $useTraktId = false): array
@@ -625,9 +633,11 @@ class TraktService
      *
      * Ported from TraktTVv2.js service.login() (lines 408-428).
      *
-     * @param string $pin The PIN code obtained from the Trakt PIN URL
+     * @param  string  $pin  The PIN code obtained from the Trakt PIN URL
      * @return string The access token
+     *
      * @throws \RuntimeException On authentication failure
+     *
      * @see https://trakt.docs.apiary.io/#reference/authentication-oauth/get-token/exchange-code-for-access_token
      */
     public function login(string $pin): string
@@ -641,8 +651,8 @@ class TraktService
                 'grant_type' => 'authorization_code',
             ]);
 
-        if (!$response->successful()) {
-            throw new \RuntimeException('Trakt login failed: ' . $response->body());
+        if (! $response->successful()) {
+            throw new \RuntimeException('Trakt login failed: '.$response->body());
         }
 
         $data = $response->json();
@@ -659,13 +669,15 @@ class TraktService
      * Ported from TraktTVv2.js service.renewToken() (lines 433-454).
      *
      * @return string|null The new access token, or null on failure
+     *
      * @see https://trakt.docs.apiary.io/#reference/authentication-oauth/get-token/exchange-refresh_token-for-access_token
      */
     public function renewToken(): ?string
     {
         $refreshToken = $this->settings->get('trakttv.refresh_token');
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             Log::warning('Trakt: No refresh token available for renewal');
+
             return null;
         }
 
@@ -678,8 +690,9 @@ class TraktService
                 'grant_type' => 'refresh_token',
             ]);
 
-        if (!$response->successful()) {
-            Log::error('Trakt: Token renewal failed: ' . $response->body());
+        if (! $response->successful()) {
+            Log::error('Trakt: Token renewal failed: '.$response->body());
+
             return null;
         }
 
@@ -699,6 +712,7 @@ class TraktService
      * Ported from TraktTVv2.js service.watched() (lines 459-464).
      *
      * @return array List of watched shows with season data
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/get-watched/get-watched
      */
     public function watched(): array
@@ -710,9 +724,10 @@ class TraktService
      * Mark a single episode as watched on Trakt.
      * Ported from TraktTVv2.js service.markEpisodeWatched() (lines 469-481).
      *
-     * @param int    $traktId   Episode's Trakt ID
-     * @param int    $watchedAt Timestamp in milliseconds when the episode was watched
+     * @param  int  $traktId  Episode's Trakt ID
+     * @param  int  $watchedAt  Timestamp in milliseconds when the episode was watched
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/add-to-history/add-items-to-watched-history
      */
     public function markEpisodeWatched(int $traktId, int $watchedAt): mixed
@@ -729,8 +744,9 @@ class TraktService
      * Batch mark multiple episodes as watched on Trakt.
      * Ported from TraktTVv2.js service.markEpisodesWatched() (lines 486-502).
      *
-     * @param array $episodes Array of ['trakt_id' => int, 'watchedAt' => int] entries
+     * @param  array  $episodes  Array of ['trakt_id' => int, 'watchedAt' => int] entries
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/add-to-history/add-items-to-watched-history
      */
     public function markEpisodesWatched(array $episodes): mixed
@@ -747,8 +763,9 @@ class TraktService
      * Mark a single episode as not watched on Trakt.
      * Ported from TraktTVv2.js service.markEpisodeNotWatched() (lines 507-518).
      *
-     * @param int $traktId Episode's Trakt ID
+     * @param  int  $traktId  Episode's Trakt ID
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/remove-from-history/remove-items-from-history
      */
     public function markEpisodeNotWatched(int $traktId): mixed
@@ -765,6 +782,7 @@ class TraktService
      * Ported from TraktTVv2.js service.userShows() (lines 523-528).
      *
      * @return array List of shows in user's collection with season data
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/get-collection/get-collection
      */
     public function userShows(): array
@@ -776,8 +794,9 @@ class TraktService
      * Add a show to the user's collection on Trakt.
      * Ported from TraktTVv2.js service.addShowToCollection() (lines 533-544).
      *
-     * @param int $traktId Show's Trakt ID
+     * @param  int  $traktId  Show's Trakt ID
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/add-to-collection/add-items-to-collection
      */
     public function addShowToCollection(int $traktId): mixed
@@ -793,8 +812,9 @@ class TraktService
      * Add an episode to the user's collection on Trakt (marks as downloaded).
      * Ported from TraktTVv2.js service.markEpisodeDownloaded() (lines 549-560).
      *
-     * @param int $traktId Episode's Trakt ID
+     * @param  int  $traktId  Episode's Trakt ID
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/add-to-collection/add-items-to-collection
      */
     public function markEpisodeDownloaded(int $traktId): mixed
@@ -810,8 +830,9 @@ class TraktService
      * Remove a show from the user's collection on Trakt.
      * Ported from TraktTVv2.js service.removeShowFromCollection() (lines 565-576).
      *
-     * @param int $traktId Show's Trakt ID
+     * @param  int  $traktId  Show's Trakt ID
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/remove-from-collection/remove-items-from-collection
      */
     public function removeShowFromCollection(int $traktId): mixed
@@ -827,8 +848,9 @@ class TraktService
      * Remove an episode from the user's collection on Trakt (marks as not downloaded).
      * Ported from TraktTVv2.js service.markEpisodeNotDownloaded() (lines 581-592).
      *
-     * @param int $traktId Episode's Trakt ID
+     * @param  int  $traktId  Episode's Trakt ID
      * @return mixed API response
+     *
      * @see https://trakt.docs.apiary.io/#reference/sync/remove-from-collection/remove-items-from-collection
      */
     public function markEpisodeNotDownloaded(int $traktId): mixed

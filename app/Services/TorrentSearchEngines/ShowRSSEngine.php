@@ -3,9 +3,8 @@
 namespace App\Services\TorrentSearchEngines;
 
 use App\Services\SettingsService;
-use Illuminate\Support\Facades\Http;
-use Symfony\Component\DomCrawler\Crawler;
 use Exception;
+use Illuminate\Support\Facades\Http;
 
 /**
  * ShowRSS.info search engine implementation.
@@ -26,16 +25,16 @@ class ShowRSSEngine extends GenericSearchEngine
     public function search(string $query, ?string $sortBy = null): array
     {
         $query = strtoupper($query);
-        
+
         // Match SXXEXX format as per original JS implementation
-        if (!preg_match('/S([0-9]{1,2})E([0-9]{1,3})/', $query, $parts)) {
+        if (! preg_match('/S([0-9]{1,2})E([0-9]{1,3})/', $query, $parts)) {
             return [];
         }
 
         try {
             // Step 1: Get the show list to find the ID
-            $response = Http::get($this->config['mirror'] . '/browse');
-            if (!$response->successful()) {
+            $response = Http::get($this->config['mirror'].'/browse');
+            if (! $response->successful()) {
                 return [];
             }
 
@@ -56,13 +55,13 @@ class ShowRSSEngine extends GenericSearchEngine
                 }
             }
 
-            if (!$foundShowId) {
+            if (! $foundShowId) {
                 return [];
             }
 
             // Step 2: Get the show's page
-            $serieResponse = Http::get($this->config['mirror'] . '/browse/' . $foundShowId);
-            if (!$serieResponse->successful()) {
+            $serieResponse = Http::get($this->config['mirror'].'/browse/'.$foundShowId);
+            if (! $serieResponse->successful()) {
                 return [];
             }
 
@@ -70,13 +69,13 @@ class ShowRSSEngine extends GenericSearchEngine
             $results = [];
 
             // Pattern for matching specific episode in ShowRSS format (e.g. 5x02)
-            $season = (int)$parts[1];
+            $season = (int) $parts[1];
             $episode = $parts[2];
             $showRSSMatch = "{$season}×{$episode}";
 
-            $crawler->filter('div.col-md-10 ul.user-timeline li > a')->each(function (\Symfony\Component\DomCrawler\Crawler $node) use (&$results, $showRSSMatch, $query) {
-                $releaseName = trim(str_replace("\n", " ", $node->text()));
-                
+            $crawler->filter('div.col-md-10 ul.user-timeline li > a')->each(function (\Symfony\Component\DomCrawler\Crawler $node) use (&$results, $showRSSMatch) {
+                $releaseName = trim(str_replace("\n", ' ', $node->text()));
+
                 if (str_contains($releaseName, $showRSSMatch)) {
                     $magnetUrl = $node->attr('href');
                     $results[] = [
@@ -85,10 +84,10 @@ class ShowRSSEngine extends GenericSearchEngine
                         'size' => 'n/a',
                         'seeders' => 1,
                         'leechers' => 0,
-                        'detailUrl' => $this->config['mirror'] . '/browse/',
+                        'detailUrl' => $this->config['mirror'].'/browse/',
                         'noMagnet' => false,
                         'noTorrent' => false,
-                        'torrentUrl' => $this->buildTorrentUrl($magnetUrl, $releaseName)
+                        'torrentUrl' => $this->buildTorrentUrl($magnetUrl, $releaseName),
                     ];
                 }
             });
@@ -103,8 +102,9 @@ class ShowRSSEngine extends GenericSearchEngine
     protected function buildTorrentUrl(string $magnetUrl, string $releaseName): string
     {
         if (preg_match('/([0-9ABCDEFabcdef]{40})/', $magnetUrl, $matches)) {
-            return 'http://itorrents.org/torrent/' . strtoupper($matches[0]) . '.torrent?title=' . urlencode($releaseName);
+            return 'http://itorrents.org/torrent/'.strtoupper($matches[0]).'.torrent?title='.urlencode($releaseName);
         }
+
         return '';
     }
 }

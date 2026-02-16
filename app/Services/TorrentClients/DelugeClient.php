@@ -2,17 +2,17 @@
 
 namespace App\Services\TorrentClients;
 
-use App\Services\SettingsService;
-use Illuminate\Support\Facades\Http;
-use Exception;
 use App\DTOs\TorrentData\DelugeData;
+use App\Services\SettingsService;
+use Exception;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Deluge Client Implementation.
- * 
+ *
  * Handles communication with Deluge via its JSON-RPC interface.
  * Requires session authentication.
- * 
+ *
  * @see Deluge.js in DuckieTV-angular.
  * @see http://deluge.readthedocs.io/en/develop/index.html
  */
@@ -42,22 +42,18 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for Deluge.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'   => 'deluge.server',
-            'port'     => 'deluge.port',
+            'server' => 'deluge.server',
+            'port' => 'deluge.port',
             'password' => 'deluge.password',
         ];
     }
 
     /**
      * Test connection to Deluge by performing login.
-     * 
-     * @return bool
      */
     public function connect(): bool
     {
@@ -73,27 +69,25 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Get list of torrents from Deluge.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
         try {
             $data = $this->rpc('web.update_ui', [
-                ['queue', 'hash', 'name', 'progress', 'state', 'save_path', 'download_payload_rate'], 
-                []
+                ['queue', 'hash', 'name', 'progress', 'state', 'save_path', 'download_payload_rate'],
+                [],
             ]);
 
-            if (!isset($data['torrents'])) {
+            if (! isset($data['torrents'])) {
                 return [];
             }
 
-            return collect($data['torrents'])->map(fn($task, $hash) => new DelugeData([
+            return collect($data['torrents'])->map(fn ($task, $hash) => new DelugeData([
                 'infoHash' => strtoupper($hash),
                 'name' => $task['name'] ?? 'Unknown',
-                'progress' => (float)($task['progress'] ?? 0),
+                'progress' => (float) ($task['progress'] ?? 0),
                 'state' => $task['state'] ?? 'Unknown',
-                'download_payload_rate' => (int)($task['download_payload_rate'] ?? 0),
+                'download_payload_rate' => (int) ($task['download_payload_rate'] ?? 0),
                 'save_path' => $task['save_path'] ?? null,
             ]))->values()->all();
         } catch (Exception $e) {
@@ -108,6 +102,7 @@ class DelugeClient extends BaseTorrentClient
     {
         try {
             $this->rpc('core.resume_torrent', [[$infoHash]]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -121,6 +116,7 @@ class DelugeClient extends BaseTorrentClient
     {
         try {
             $this->rpc('core.pause_torrent', [[$infoHash]]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -142,6 +138,7 @@ class DelugeClient extends BaseTorrentClient
     {
         try {
             $this->rpc('core.remove_torrent', [$infoHash, false]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -168,6 +165,7 @@ class DelugeClient extends BaseTorrentClient
         try {
             $torrents = $this->rpc('web.update_ui', [['hash', 'state'], ['hash' => $infoHash]]);
             $torrent = $torrents['torrents'][$infoHash] ?? null;
+
             return $torrent && in_array($torrent['state'], ['Downloading', 'Seeding', 'Active'], true);
         } catch (Exception $e) {
             return false;
@@ -176,11 +174,6 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Add a magnet link to Deluge.
-     * 
-     * @param string $magnet
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -193,9 +186,10 @@ class DelugeClient extends BaseTorrentClient
             $this->rpc('web.add_torrents', [[
                 [
                     'path' => $magnet,
-                    'options' => $options
-                ]
+                    'options' => $options,
+                ],
             ]]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -204,13 +198,6 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -219,36 +206,29 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw binary data.
-     * 
+     *
      * Deluge requires uploading to /upload first, then using the temporary file path in web.add_torrents.
-     * 
-     * @param string $data
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
         try {
-            $url = $this->getBaseUrl() . '/upload';
-            
+            $url = $this->getBaseUrl().'/upload';
+
             $response = Http::withCookies($this->cookie ? ['_session_id' => $this->cookie] : [], $this->getBaseDomain())
-                ->attach('file', $data, $releaseName . '.torrent')
+                ->attach('file', $data, $releaseName.'.torrent')
                 ->post($url);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return false;
             }
 
             $uploadResult = $response->json();
-            if (!isset($uploadResult['files'][0])) {
+            if (! isset($uploadResult['files'][0])) {
                 return false;
             }
 
             return $this->addMagnet($uploadResult['files'][0], $dlPath, $label);
-            
+
         } catch (Exception $e) {
             return false;
         }
@@ -256,22 +236,19 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Execute a JSON-RPC method.
-     * 
-     * @param string $method
-     * @param array $params
-     * @return mixed
+     *
      * @throws Exception
      */
     protected function rpc(string $method, array $params = []): mixed
     {
-        $url = $this->getBaseUrl() . '/json';
-        
+        $url = $this->getBaseUrl().'/json';
+
         $request = Http::withHeaders([
             'Content-Type' => 'application/json',
         ]);
 
         if ($this->cookie) {
-            // Deluge uses a cookie named _session_id or similar. 
+            // Deluge uses a cookie named _session_id or similar.
             // We need to handle cookie persistence.
             $request->withCookies(['_session_id' => $this->cookie], $this->getBaseDomain());
         }
@@ -280,11 +257,11 @@ class DelugeClient extends BaseTorrentClient
         $response = $request->post($url, [
             'method' => $method,
             'params' => $params,
-            'id'     => $this->requestCounter++,
+            'id' => $this->requestCounter++,
         ]);
 
-        if (!$response->successful()) {
-            throw new Exception("Deluge RPC error: " . $response->status());
+        if (! $response->successful()) {
+            throw new Exception('Deluge RPC error: '.$response->status());
         }
 
         // Persistent session cookie
@@ -297,7 +274,7 @@ class DelugeClient extends BaseTorrentClient
 
         $data = $response->json();
         if (isset($data['error']) && $data['error'] !== null) {
-            throw new Exception("Deluge RPC Error: " . ($data['error']['message'] ?? 'Unknown error'));
+            throw new Exception('Deluge RPC Error: '.($data['error']['message'] ?? 'Unknown error'));
         }
 
         return $data['result'] ?? null;
@@ -305,18 +282,14 @@ class DelugeClient extends BaseTorrentClient
 
     /**
      * Get the base URL (protocol + host + port).
-     * 
-     * @return string
      */
     protected function getBaseUrl(): string
     {
-        return rtrim($this->config['server'], '/') . ':' . $this->config['port'];
+        return rtrim($this->config['server'], '/').':'.$this->config['port'];
     }
 
     /**
      * Get the base domain for cookies.
-     * 
-     * @return string
      */
     protected function getBaseDomain(): string
     {

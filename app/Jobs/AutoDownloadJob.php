@@ -6,8 +6,8 @@ use App\Models\Episode;
 use App\Models\Serie;
 use App\Services\FavoritesService;
 use App\Services\SettingsService;
-use App\Services\TorrentSearchService;
 use App\Services\TorrentClients\TorrentClientInterface;
+use App\Services\TorrentSearchService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -106,10 +106,10 @@ class AutoDownloadJob implements ShouldQueue
         FavoritesService $favorites,
         ?TorrentSearchService $searchService = null,
         ?TorrentClientInterface $torrentClient = null
-    ): void
-    {
-        if (!$settings->get('torrenting.enabled') || !$settings->get('torrenting.autodownload')) {
+    ): void {
+        if (! $settings->get('torrenting.enabled') || ! $settings->get('torrenting.autodownload')) {
             Log::info('AutoDownload: Disabled in settings, skipping.');
+
             return;
         }
 
@@ -132,7 +132,7 @@ class AutoDownloadJob implements ShouldQueue
 
         $settings->set('autodownload.lastrun', $nowMs);
 
-        Log::info('AutoDownload: Check completed. ' . count($this->activityList) . ' episodes processed.');
+        Log::info('AutoDownload: Check completed. '.count($this->activityList).' episodes processed.');
     }
 
     /**
@@ -141,11 +141,11 @@ class AutoDownloadJob implements ShouldQueue
      * Ported from AutoDownloadService.js autoDownloadCheck() inner loop (lines 88-156).
      * Each filter check logs an activity entry explaining why the episode was skipped or processed.
      *
-     * @param Episode         $episode       The candidate episode
-     * @param SettingsService $settings      Settings service for global configuration
-     * @param int             $settingsDelay Delay in minutes after airing before download attempt
-     * @param bool            $showSpecials  Whether specials should be auto-downloaded
-     * @param int             $nowMs         Current timestamp in milliseconds
+     * @param  Episode  $episode  The candidate episode
+     * @param  SettingsService  $settings  Settings service for global configuration
+     * @param  int  $settingsDelay  Delay in minutes after airing before download attempt
+     * @param  bool  $showSpecials  Whether specials should be auto-downloaded
+     * @param  int  $nowMs  Current timestamp in milliseconds
      */
     private function processCandidate(
         Episode $episode,
@@ -157,39 +157,44 @@ class AutoDownloadJob implements ShouldQueue
         int $nowMs
     ): void {
         $serie = $episode->serie;
-        if (!$serie) {
+        if (! $serie) {
             return;
         }
 
-        $serieEpisode = $serie->name . ' ' . $episode->getFormattedEpisode();
+        $serieEpisode = $serie->name.' '.$episode->getFormattedEpisode();
 
         // Filter: specials hidden from calendar
-        if ($episode->seasonnumber === 0 && !$showSpecials && !$serie->ignoreHideSpecials) {
+        if ($episode->seasonnumber === 0 && ! $showSpecials && ! $serie->ignoreHideSpecials) {
             $this->logActivity($serieEpisode, 3, ' HS');
+
             return;
         }
 
         // Filter: serie hidden from calendar
-        if (!$serie->displaycalendar) {
+        if (! $serie->displaycalendar) {
             $this->logActivity($serieEpisode, 3, ' HC');
+
             return;
         }
 
         // Filter: already downloaded
         if ($episode->isDownloaded()) {
             $this->logActivity($serieEpisode, 0);
+
             return;
         }
 
         // Filter: already watched
         if ($episode->watchedAt !== null) {
             $this->logActivity($serieEpisode, 1);
+
             return;
         }
 
         // Filter: already has magnet hash (download in progress)
         if ($episode->magnetHash !== null) {
             $this->logActivity($serieEpisode, 2);
+
             return;
         }
 
@@ -202,20 +207,23 @@ class AutoDownloadJob implements ShouldQueue
             $episodeAiredMs = $episode->firstaired + (($runtime + $delay) * 60 * 1000);
             if ($episodeAiredMs > $nowMs) {
                 $minutesToGo = ($episodeAiredMs - $nowMs) / 1000 / 60;
-                $this->logActivity($serieEpisode, 8, ' ' . $this->formatDhm($minutesToGo));
+                $this->logActivity($serieEpisode, 8, ' '.$this->formatDhm($minutesToGo));
+
                 return;
             }
         }
 
         // Filter: missing TVDB_ID
-        if (!$serie->tvdb_id) {
+        if (! $serie->tvdb_id) {
             $this->logActivity($serieEpisode, 9);
+
             return;
         }
 
         // Filter: auto-download disabled for this serie
-        if (!$serie->autoDownload) {
+        if (! $serie->autoDownload) {
             $this->logActivity($serieEpisode, 3);
+
             return;
         }
 
@@ -226,15 +234,15 @@ class AutoDownloadJob implements ShouldQueue
     /**
      * Attempt to auto-download an episode.
      *
-     * @param Serie                  $serie         The serie to download for
-     * @param Episode                $episode       The episode to download
-     * @param SettingsService        $settings      Settings service
-     * @param TorrentSearchService   $searchService Torrent search registry
-     * @param TorrentClientInterface $torrentClient Active torrent client
+     * @param  Serie  $serie  The serie to download for
+     * @param  Episode  $episode  The episode to download
+     * @param  SettingsService  $settings  Settings service
+     * @param  TorrentSearchService  $searchService  Torrent search registry
+     * @param  TorrentClientInterface  $torrentClient  Active torrent client
      */
     private function autoDownload(
-        Serie $serie, 
-        Episode $episode, 
+        Serie $serie,
+        Episode $episode,
         SettingsService $settings,
         TorrentSearchService $searchService,
         TorrentClientInterface $torrentClient
@@ -260,30 +268,33 @@ class AutoDownloadJob implements ShouldQueue
         $requireKeywordsModeOR = (bool) $settings->get('torrenting.require_keywords_mode_or', true);
 
         // Build search query
-        $searchString = $serie->name . ' ' . $episode->getFormattedEpisode();
+        $searchString = $serie->name.' '.$episode->getFormattedEpisode();
         $requireKeywordsQuery = $requireKeywordsModeOR ? '' : $requireKeywordsStr;
         $query = trim(implode(' ', array_filter([$searchString, $preferredQuality, $requireKeywordsQuery])));
 
         // Execute search
-        $searchEngine = $serie->searchProvider 
-            ? $searchService->getSearchEngine($serie->searchProvider) 
+        $searchEngine = $serie->searchProvider
+            ? $searchService->getSearchEngine($serie->searchProvider)
             : $searchService->getDefaultEngine();
 
-        if (!$searchEngine) {
+        if (! $searchEngine) {
             $this->logActivity($query, 4, ' Engine not found');
+
             return;
         }
 
         try {
             $results = $searchEngine->search($query, 'seeders.d');
         } catch (\Exception $e) {
-            Log::error("AutoDownload Search Error: " . $e->getMessage());
+            Log::error('AutoDownload Search Error: '.$e->getMessage());
             $this->logActivity($query, 4, ' Search failed');
+
             return;
         }
 
         if (empty($results)) {
             $this->logActivity($query, 4);
+
             return;
         }
 
@@ -312,7 +323,7 @@ class AutoDownloadJob implements ShouldQueue
             }
 
             // 4. Require keywords check
-            if (!empty($requireKeywords)) {
+            if (! empty($requireKeywords)) {
                 $foundCount = 0;
                 foreach ($requireKeywords as $word) {
                     if (strpos($releaseName, $word) !== false) {
@@ -322,7 +333,7 @@ class AutoDownloadJob implements ShouldQueue
                 if ($requireKeywordsModeOR && $foundCount === 0) {
                     continue;
                 }
-                if (!$requireKeywordsModeOR && $foundCount < count($requireKeywords)) {
+                if (! $requireKeywordsModeOR && $foundCount < count($requireKeywords)) {
                     continue;
                 }
             }
@@ -336,7 +347,7 @@ class AutoDownloadJob implements ShouldQueue
             // Found a winner!
             try {
                 // If we only have a detailUrl, we need to fetch details first
-                if (empty($result['magnetUrl']) && !empty($result['detailUrl'])) {
+                if (empty($result['magnetUrl']) && ! empty($result['detailUrl'])) {
                     $details = $searchEngine->getDetails($result['detailUrl'], $result['releasename']);
                     $result['magnetUrl'] = $details['magnetUrl'] ?? null;
                 }
@@ -348,15 +359,16 @@ class AutoDownloadJob implements ShouldQueue
                 $dlPath = $settings->get('torrenting.directory');
                 if ($torrentClient->addMagnet($result['magnetUrl'], $dlPath, 'DuckieTV')) {
                     $episode->magnetHash = $this->extractHash($result['magnetUrl']);
-                    // Use a manual save to avoid triggering events if necessary, 
+                    // Use a manual save to avoid triggering events if necessary,
                     // though standard save is fine for Phase 3.
                     $episode->save();
-                    
-                    $this->logActivity($query, 6, ' ' . $result['releasename']);
+
+                    $this->logActivity($query, 6, ' '.$result['releasename']);
+
                     return; // Done with this episode
                 }
             } catch (\Exception $e) {
-                Log::error("AutoDownload launch error: " . $e->getMessage());
+                Log::error('AutoDownload launch error: '.$e->getMessage());
             }
         }
 
@@ -375,6 +387,7 @@ class AutoDownloadJob implements ShouldQueue
             // base32 to hex conversion could be added here if needed
             return strtoupper($matches[1]);
         }
+
         return null;
     }
 
@@ -391,8 +404,9 @@ class AutoDownloadJob implements ShouldQueue
         }
 
         $global = $settings->get('torrenting.ignore_keywords', '');
+
         return $hasCustomExcludes
-            ? trim($serie->customExcludes . ' ' . $global)
+            ? trim($serie->customExcludes.' '.$global)
             : $global;
     }
 
@@ -407,17 +421,18 @@ class AutoDownloadJob implements ShouldQueue
         }
 
         $global = $settings->get('torrenting.require_keywords', '');
+
         return $hasCustomIncludes
-            ? trim($serie->customIncludes . ' ' . $global)
+            ? trim($serie->customIncludes.' '.$global)
             : $global;
     }
 
     /**
      * Log an activity entry for the current auto-download run.
      *
-     * @param string $search Search query or episode identifier
-     * @param int    $status Status code (0-9)
-     * @param string $extra  Additional detail
+     * @param  string  $search  Search query or episode identifier
+     * @param  int  $status  Status code (0-9)
+     * @param  string  $extra  Additional detail
      */
     private function logActivity(string $search, int $status, string $extra = ''): void
     {
@@ -432,7 +447,7 @@ class AutoDownloadJob implements ShouldQueue
      * Format minutes into a "Xd Xh Xm" duration string.
      * Ported from JavaScript Number.prototype.minsToDhm().
      *
-     * @param float $totalMinutes Total minutes
+     * @param  float  $totalMinutes  Total minutes
      * @return string Formatted duration string
      */
     private function formatDhm(float $totalMinutes): string

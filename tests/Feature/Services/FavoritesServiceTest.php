@@ -4,7 +4,6 @@ use App\Models\Episode;
 use App\Models\Season;
 use App\Models\Serie;
 use App\Services\FavoritesService;
-use App\Services\SettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 

@@ -37,7 +37,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -59,7 +59,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -77,7 +77,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -99,7 +99,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -110,7 +110,7 @@ class SeriesController extends Controller
         if ($season_id) {
             $activeSeason = $seasons->firstWhere('id', $season_id);
         }
-        if (!isset($activeSeason) || !$activeSeason) {
+        if (! isset($activeSeason) || ! $activeSeason) {
             // Default: first season with unwatched episodes, or last season
             $activeSeason = $seasons->first(fn ($s) => $s->episodes->where('watched', false)->isNotEmpty())
                 ?? $seasons->last();
@@ -137,7 +137,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -165,7 +165,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (!$serie) {
+        if (! $serie) {
             return abort(404, 'Show not found');
         }
 
@@ -185,6 +185,7 @@ class SeriesController extends Controller
 
         if ($serie) {
             $this->favorites->remove($serie);
+
             return redirect()->route('series.index')->with('status', "Removed {$serie->name} from favorites.");
         }
 

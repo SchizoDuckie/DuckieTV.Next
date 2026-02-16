@@ -6,10 +6,10 @@ use App\Services\SettingsService;
 
 /**
  * BiglyBT Client Implementation.
- * 
- * BiglyBT uses the Transmission RPC API, so we inherit all logic 
+ *
+ * BiglyBT uses the Transmission RPC API, so we inherit all logic
  * from TransmissionClient and simply override the configuration mapping.
- * 
+ *
  * @see BiglyBT.js in DuckieTV-angular.
  */
 class BiglyBTClient extends TransmissionClient
@@ -36,18 +36,16 @@ class BiglyBTClient extends TransmissionClient
 
     /**
      * Map configuration to BiglyBT specific settings.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'       => 'biglybt.server',
-            'port'         => 'biglybt.port',
-            'path'         => 'biglybt.path',
-            'username'     => 'biglybt.username',
-            'password'     => 'biglybt.password',
-            'use_auth'     => 'biglybt.use_auth',
+            'server' => 'biglybt.server',
+            'port' => 'biglybt.port',
+            'path' => 'biglybt.path',
+            'username' => 'biglybt.username',
+            'password' => 'biglybt.password',
+            'use_auth' => 'biglybt.use_auth',
             'progressX100' => 'biglybt.progressX100',
         ];
     }

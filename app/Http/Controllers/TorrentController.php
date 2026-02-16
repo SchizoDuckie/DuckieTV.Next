@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\TorrentSearchRequest;
 use App\Http\Requests\TorrentDetailsRequest;
 use App\Http\Requests\TorrentDialogRequest;
-use App\Services\TorrentSearchService;
+use App\Http\Requests\TorrentSearchRequest;
 use App\Services\SettingsService;
+use App\Services\TorrentSearchService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Exception;
 
 /**
  * Handles torrent search, details fetching, and engine listing.
@@ -31,14 +31,14 @@ use Exception;
 class TorrentController extends Controller
 {
     /**
-     * @param TorrentSearchService $searchService Registry of all torrent search engines
-     * @param SettingsService $settings User settings (search quality, default engine, etc.)
+     * @param  TorrentSearchService  $searchService  Registry of all torrent search engines
+     * @param  SettingsService  $settings  User settings (search quality, default engine, etc.)
      */
     public const DEFAULT_ENGINE = 'ThePirateBay';
 
     /**
-     * @param TorrentSearchService $searchService Registry of all torrent search engines
-     * @param SettingsService $settings User settings (search quality, default engine, etc.)
+     * @param  TorrentSearchService  $searchService  Registry of all torrent search engines
+     * @param  SettingsService  $settings  User settings (search quality, default engine, etc.)
      */
     public function __construct(
         protected TorrentSearchService $searchService,
@@ -53,7 +53,7 @@ class TorrentController extends Controller
      * user clicks "FIND TORRENT" on an episode detail view. The search query is
      * pre-populated with the show name, episode code, and quality setting.
      *
-     * @param TorrentDialogRequest $request Contains 'query' (pre-filled search) and 'episode_id'
+     * @param  TorrentDialogRequest  $request  Contains 'query' (pre-filled search) and 'episode_id'
      * @return View The torrents.search blade template
      */
     public function searchDialog(TorrentDialogRequest $request): View
@@ -93,7 +93,7 @@ class TorrentController extends Controller
      * - noMagnet: bool — true if magnet must be fetched from detail page
      * - noTorrent: bool — true if .torrent URL must be fetched from detail page
      *
-     * @param TorrentSearchRequest $request Validated search parameters
+     * @param  TorrentSearchRequest  $request  Validated search parameters
      * @return JsonResponse Search results or error
      */
     public function search(TorrentSearchRequest $request): JsonResponse
@@ -128,7 +128,7 @@ class TorrentController extends Controller
      * the detail page is required. This endpoint performs that fetch server-side
      * and extracts the magnet/torrent URLs using the engine's detailsSelectors.
      *
-     * @param TorrentDetailsRequest $request Validated detail page parameters
+     * @param  TorrentDetailsRequest  $request  Validated detail page parameters
      * @return JsonResponse Contains 'magnetUrl' and/or 'torrentUrl'
      */
     public function details(TorrentDetailsRequest $request): JsonResponse
@@ -173,19 +173,16 @@ class TorrentController extends Controller
 
     /**
      * Add a torrent (magnet or URL) to the active client.
-     * 
-     * @param \App\Http\Requests\AddTorrentRequest $request
-     * @return JsonResponse
      */
     public function add(\App\Http\Requests\AddTorrentRequest $request): JsonResponse
     {
         try {
             $client = $this->clientService->getActiveClient();
-            if (!$client) {
+            if (! $client) {
                 return response()->json(['error' => 'No torrent client configured'], 422);
             }
 
-            if (!$client->connect()) {
+            if (! $client->connect()) {
                 return response()->json(['error' => 'Could not connect to torrent client'], 422);
             }
 
@@ -216,29 +213,24 @@ class TorrentController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
-
     }
 
     /**
      * Attempt to connect to the configured torrent client.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function connect(Request $request): JsonResponse
     {
         $config = $request->all();
         $client = $config['torrenting.client'] ?? 'uTorrent';
 
-        \App\Events\TorrentConnectionStatus::dispatch('connecting', $client, 'Connecting to ' . $client . '...');
+        \App\Events\TorrentConnectionStatus::dispatch('connecting', $client, 'Connecting to '.$client.'...');
         \App\Jobs\AttemptTorrentConnection::dispatch($client, $config);
 
         return response()->json(['success' => true, 'message' => 'Connection attempt started...']);
     }
+
     /**
      * Get the current status of the torrent client.
-     * 
-     * @return JsonResponse
      */
     public function status(): JsonResponse
     {
@@ -246,12 +238,12 @@ class TorrentController extends Controller
             /** @var \App\Services\TorrentClients\TorrentClientInterface|null $client */
             $client = app(\App\Services\TorrentClientService::class)->getActiveClient();
 
-            if (!$client) {
+            if (! $client) {
                 return response()->json([
                     'connected' => false,
                     'client' => 'None',
                     'active_count' => 0,
-                    'error' => 'No client configured'
+                    'error' => 'No client configured',
                 ]);
             }
 
@@ -266,11 +258,11 @@ class TorrentController extends Controller
                     $torrentList = $client->getTorrents();
                     $activeCount = count($torrentList);
                 } else {
-                    $error = 'Could not connect to ' . $client->getName() . '. Check your settings and ensure the client is running.';
+                    $error = 'Could not connect to '.$client->getName().'. Check your settings and ensure the client is running.';
                 }
             } catch (Exception $e) {
                 $connected = false;
-                $error = 'Connection failed: ' . $e->getMessage();
+                $error = 'Connection failed: '.$e->getMessage();
             }
 
             return response()->json([
@@ -292,8 +284,6 @@ class TorrentController extends Controller
 
     /**
      * Render the torrent client list view.
-     *
-     * @return View
      */
     public function index(): View
     {
@@ -320,9 +310,6 @@ class TorrentController extends Controller
 
     /**
      * Render the torrent detail view.
-     *
-     * @param string $infoHash
-     * @return View
      */
     public function show(string $infoHash): View
     {
@@ -360,6 +347,7 @@ class TorrentController extends Controller
             'torrent' => $torrent,
         ]);
     }
+
     /**
      * Start a torrent by its infoHash.
      */
@@ -367,10 +355,15 @@ class TorrentController extends Controller
     {
         try {
             $client = $this->clientService->getActiveClient();
-            if (!$client) return response()->json(['error' => 'No client configured'], 422);
-            if (!$client->connect()) return response()->json(['error' => 'Could not connect'], 422);
+            if (! $client) {
+                return response()->json(['error' => 'No client configured'], 422);
+            }
+            if (! $client->connect()) {
+                return response()->json(['error' => 'Could not connect'], 422);
+            }
 
             $success = $client->startTorrent($infoHash);
+
             return response()->json(['success' => $success]);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -384,10 +377,15 @@ class TorrentController extends Controller
     {
         try {
             $client = $this->clientService->getActiveClient();
-            if (!$client) return response()->json(['error' => 'No client configured'], 422);
-            if (!$client->connect()) return response()->json(['error' => 'Could not connect'], 422);
+            if (! $client) {
+                return response()->json(['error' => 'No client configured'], 422);
+            }
+            if (! $client->connect()) {
+                return response()->json(['error' => 'Could not connect'], 422);
+            }
 
             $success = $client->stopTorrent($infoHash);
+
             return response()->json(['success' => $success]);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -401,10 +399,15 @@ class TorrentController extends Controller
     {
         try {
             $client = $this->clientService->getActiveClient();
-            if (!$client) return response()->json(['error' => 'No client configured'], 422);
-            if (!$client->connect()) return response()->json(['error' => 'Could not connect'], 422);
+            if (! $client) {
+                return response()->json(['error' => 'No client configured'], 422);
+            }
+            if (! $client->connect()) {
+                return response()->json(['error' => 'Could not connect'], 422);
+            }
 
             $success = $client->pauseTorrent($infoHash);
+
             return response()->json(['success' => $success]);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -418,10 +421,15 @@ class TorrentController extends Controller
     {
         try {
             $client = $this->clientService->getActiveClient();
-            if (!$client) return response()->json(['error' => 'No client configured'], 422);
-            if (!$client->connect()) return response()->json(['error' => 'Could not connect'], 422);
+            if (! $client) {
+                return response()->json(['error' => 'No client configured'], 422);
+            }
+            if (! $client->connect()) {
+                return response()->json(['error' => 'Could not connect'], 422);
+            }
 
             $success = $client->removeTorrent($infoHash);
+
             return response()->json(['success' => $success]);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

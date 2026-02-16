@@ -32,16 +32,16 @@ class AttemptTorrentConnection implements ShouldQueue
 
             // Fail if no host or port provided
             if (empty($this->config['torrenting.host']) || empty($this->config['torrenting.port'])) {
-                throw new \Exception("Host and Port are required.");
+                throw new \Exception('Host and Port are required.');
             }
 
             // Placeholder logic: fail if port is 9999
             if ($port == 9999) {
-                 throw new \Exception("Connection refused to $host:$port (Simulated)");
+                throw new \Exception("Connection refused to $host:$port (Simulated)");
             }
 
             TorrentConnectionStatus::dispatch('connected', $this->client, "Successfully connected to {$this->client} at $host:$port!");
-            
+
         } catch (\Throwable $e) {
             TorrentConnectionStatus::dispatch('failed', $this->client, $e->getMessage());
         }

@@ -2,22 +2,22 @@
 
 namespace Tests\Feature\Services;
 
-use App\Services\TorrentSearchService;
-use App\Services\TorrentSearchEngines\ThePirateBayEngine;
-use App\Services\TorrentSearchEngines\OneThreeThreeSevenXEngine;
-use App\Services\TorrentSearchEngines\LimeTorrentsEngine;
-use App\Services\TorrentSearchEngines\NyaaEngine;
-use App\Services\TorrentSearchEngines\TheRARBGEngine;
-use App\Services\TorrentSearchEngines\IsoHuntEngine;
-use App\Services\TorrentSearchEngines\IdopeEngine;
-use App\Services\TorrentSearchEngines\KATEngine;
-use App\Services\TorrentSearchEngines\ShowRSSEngine;
-use App\Services\TorrentSearchEngines\KnabenEngine;
-use App\Services\TorrentSearchEngines\PiratesParadiseEngine;
-use App\Services\TorrentSearchEngines\TorrentDownloadsEngine;
-use App\Services\TorrentSearchEngines\UindexEngine;
 use App\Services\TorrentSearchEngines\ETagEngine;
 use App\Services\TorrentSearchEngines\FileMoodEngine;
+use App\Services\TorrentSearchEngines\IdopeEngine;
+use App\Services\TorrentSearchEngines\IsoHuntEngine;
+use App\Services\TorrentSearchEngines\KATEngine;
+use App\Services\TorrentSearchEngines\KnabenEngine;
+use App\Services\TorrentSearchEngines\LimeTorrentsEngine;
+use App\Services\TorrentSearchEngines\NyaaEngine;
+use App\Services\TorrentSearchEngines\OneThreeThreeSevenXEngine;
+use App\Services\TorrentSearchEngines\PiratesParadiseEngine;
+use App\Services\TorrentSearchEngines\ShowRSSEngine;
+use App\Services\TorrentSearchEngines\ThePirateBayEngine;
+use App\Services\TorrentSearchEngines\TheRARBGEngine;
+use App\Services\TorrentSearchEngines\TorrentDownloadsEngine;
+use App\Services\TorrentSearchEngines\UindexEngine;
+use App\Services\TorrentSearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -25,6 +25,7 @@ use Tests\TestCase;
 class TorrentSearchIntegrationTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * Data provider for all registered search engines.
      */
@@ -51,7 +52,7 @@ class TorrentSearchIntegrationTest extends TestCase
 
     /**
      * Test a specific search engine.
-     * 
+     *
      * @group integration
      */
     #[DataProvider('engineProvider')]
@@ -69,7 +70,7 @@ class TorrentSearchIntegrationTest extends TestCase
             }
         }
 
-        $this->assertNotNull($engine, "Engine class " . class_basename($engineClass) . " should be registered");
+        $this->assertNotNull($engine, 'Engine class '.class_basename($engineClass).' should be registered');
         $name = $engine->getName();
 
         // ShowRSS requires a specific format
@@ -80,17 +81,17 @@ class TorrentSearchIntegrationTest extends TestCase
 
         try {
             $results = $engine->search($query);
-            
+
             $this->assertIsArray($results, "Engine {$name} should return an array of results");
-            
+
             if (count($results) > 0) {
                 $result = $results[0];
                 $this->assertArrayHasKey('releasename', $result);
                 $this->assertArrayHasKey('size', $result);
                 $this->assertArrayHasKey('seeders', $result);
-                
+
                 // If noMagnet is false, it should either have magnetUrl OR have detailsSelectors configured (which implies detailUrl)
-                if (!($result['noMagnet'] ?? false)) {
+                if (! ($result['noMagnet'] ?? false)) {
                     if (isset($result['magnetUrl'])) {
                         $this->assertArrayHasKey('magnetUrl', $result);
                     } else {
@@ -101,7 +102,7 @@ class TorrentSearchIntegrationTest extends TestCase
                 $this->markTestIncomplete("No results found for {$name} (possibly mirror down or query too specific)");
             }
         } catch (\Exception $e) {
-            $this->markTestIncomplete("Search failed for {$name} due to network/host error: " . $e->getMessage());
+            $this->markTestIncomplete("Search failed for {$name} due to network/host error: ".$e->getMessage());
         }
     }
 }

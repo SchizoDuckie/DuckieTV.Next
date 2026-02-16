@@ -2,14 +2,14 @@
 
 namespace App\Services\TorrentClients;
 
-use App\Services\SettingsService;
 use App\DTOs\TorrentData\TransmissionData;
-use Illuminate\Support\Facades\Http;
+use App\Services\SettingsService;
 use Exception;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Transmission torrent client implementation.
- * 
+ *
  * @see Transmission.js in DuckieTV-angular for original implementation.
  * @see https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
  */
@@ -18,9 +18,6 @@ class TransmissionClient extends BaseTorrentClient
     /** @var string|null The active session ID required for requests */
     protected ?string $sessionId = null;
 
-    /**
-     * @param SettingsService $settings
-     */
     public function __construct(SettingsService $settings)
     {
         parent::__construct($settings);
@@ -43,15 +40,13 @@ class TransmissionClient extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for Transmission.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'   => 'transmission.server',
-            'port'     => 'transmission.port',
-            'path'     => 'transmission.path',
+            'server' => 'transmission.server',
+            'port' => 'transmission.port',
+            'path' => 'transmission.path',
             'username' => 'transmission.username',
             'password' => 'transmission.password',
             'use_auth' => 'transmission.use_auth',
@@ -60,20 +55,17 @@ class TransmissionClient extends BaseTorrentClient
 
     /**
      * Test connection to Transmission.
-     * 
-     * @return bool
      */
     public function connect(): bool
     {
         $response = $this->rpc('session-get');
         $this->connected = isset($response['result']) && $response['result'] === 'success';
+
         return $this->connected;
     }
 
     /**
      * Get list of torrents from Transmission.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
@@ -81,18 +73,18 @@ class TransmissionClient extends BaseTorrentClient
             'fields' => [
                 'id', 'name', 'hashString', 'status', 'error', 'errorString', 'eta',
                 'isFinished', 'isStalled', 'leftUntilDone', 'metadataPercentComplete',
-                'percentDone', 'sizeWhenDone', 'files', 'rateDownload', 'rateUpload', 'downloadDir'
-            ]
+                'percentDone', 'sizeWhenDone', 'files', 'rateDownload', 'rateUpload', 'downloadDir',
+            ],
         ]);
 
-        if (!isset($response['arguments']['torrents'])) {
+        if (! isset($response['arguments']['torrents'])) {
             return [];
         }
 
         return collect($response['arguments']['torrents'])->map(fn ($torrent) => new TransmissionData([
             'infoHash' => strtoupper($torrent['hashString']),
             'name' => $torrent['name'],
-            'progress' => (float)$torrent['percentDone'] * 100,
+            'progress' => (float) $torrent['percentDone'] * 100,
             'status' => $this->getTransmissionStatus($torrent['status']),
             'isStarted' => $torrent['status'] > 0,
             'downloadSpeed' => $torrent['rateDownload'],
@@ -101,16 +93,15 @@ class TransmissionClient extends BaseTorrentClient
 
     /**
      * Add a magnet link to Transmission.
-     * 
-     * @param string $magnet Magnet link
-     * @param string|null $downloadPath Optional download path
-     * @param string|null $label Optional label (not supported by Transmission)
-     * @return bool
+     *
+     * @param  string  $magnet  Magnet link
+     * @param  string|null  $downloadPath  Optional download path
+     * @param  string|null  $label  Optional label (not supported by Transmission)
      */
     public function addMagnet(string $magnet, ?string $downloadPath = null, ?string $label = null): bool
     {
         $args = [
-            'paused'   => false,
+            'paused' => false,
             'filename' => $magnet,
         ];
 
@@ -119,18 +110,18 @@ class TransmissionClient extends BaseTorrentClient
         }
 
         $response = $this->rpc('torrent-add', $args);
+
         return isset($response['result']) && $response['result'] === 'success';
     }
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url The .torrent file URL
-     * @param string $infoHash The infohash of the torrent for verification.
-     * @param string $releaseName The readable name of the release.
-     * @param string|null $dlPath Optional custom download path.
-     * @param string|null $label Optional label or category.
-     * @return bool
+     *
+     * @param  string  $url  The .torrent file URL
+     * @param  string  $infoHash  The infohash of the torrent for verification.
+     * @param  string  $releaseName  The readable name of the release.
+     * @param  string|null  $dlPath  Optional custom download path.
+     * @param  string|null  $label  Optional label or category.
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -139,18 +130,17 @@ class TransmissionClient extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw binary data.
-     * 
-     * @param string $data The raw .torrent file content.
-     * @param string $infoHash The infohash of the torrent for verification.
-     * @param string $releaseName The readable name of the release.
-     * @param string|null $dlPath Optional custom download path.
-     * @param string|null $label Optional label or category.
-     * @return bool
+     *
+     * @param  string  $data  The raw .torrent file content.
+     * @param  string  $infoHash  The infohash of the torrent for verification.
+     * @param  string  $releaseName  The readable name of the release.
+     * @param  string|null  $dlPath  Optional custom download path.
+     * @param  string|null  $label  Optional label or category.
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
         $args = [
-            'paused'   => false,
+            'paused' => false,
             'metainfo' => base64_encode($data),
         ];
 
@@ -159,6 +149,7 @@ class TransmissionClient extends BaseTorrentClient
         }
 
         $response = $this->rpc('torrent-add', $args);
+
         return isset($response['result']) && $response['result'] === 'success';
     }
 
@@ -178,17 +169,17 @@ class TransmissionClient extends BaseTorrentClient
 
     /**
      * Execute an RPC request to Transmission.
-     * 
-     * @param string $method RPC method name
-     * @param array $args Method arguments
-     * @param bool $isRetry Whether this is a retry attempt after 409/Session-Id update
-     * @return array
+     *
+     * @param  string  $method  RPC method name
+     * @param  array  $args  Method arguments
+     * @param  bool  $isRetry  Whether this is a retry attempt after 409/Session-Id update
+     *
      * @throws Exception
      */
     protected function rpc(string $method, array $args = [], bool $isRetry = false): array
     {
-        $url = rtrim($this->config['server'], '/') . ':' . $this->config['port'] . '/' . ltrim($this->config['path'], '/');
-        
+        $url = rtrim($this->config['server'], '/').':'.$this->config['port'].'/'.ltrim($this->config['path'], '/');
+
         $request = Http::withHeaders([
             'X-Transmission-Session-Id' => $this->sessionId ?? '',
         ]);
@@ -199,20 +190,20 @@ class TransmissionClient extends BaseTorrentClient
 
         /** @var \Illuminate\Http\Client\Response $response */
         $response = $request->post($url, [
-            'method'    => $method,
+            'method' => $method,
             'arguments' => $args,
         ]);
 
         // Handle Session-Id update (409 Conflict)
         if ($response->status() === 409) {
             $this->sessionId = $response->header('X-Transmission-Session-Id');
-            if (!$isRetry) {
+            if (! $isRetry) {
                 return $this->rpc($method, $args, true);
             }
         }
 
-        if (!$response->successful()) {
-            throw new Exception("Transmission RPC error: " . $response->status() . " " . $response->body());
+        if (! $response->successful()) {
+            throw new Exception('Transmission RPC error: '.$response->status().' '.$response->body());
         }
 
         return $response->json();
@@ -224,6 +215,7 @@ class TransmissionClient extends BaseTorrentClient
     public function startTorrent(string $infoHash): bool
     {
         $response = $this->rpc('torrent-start', ['ids' => [$infoHash]]);
+
         return isset($response['result']) && $response['result'] === 'success';
     }
 
@@ -233,6 +225,7 @@ class TransmissionClient extends BaseTorrentClient
     public function stopTorrent(string $infoHash): bool
     {
         $response = $this->rpc('torrent-stop', ['ids' => [$infoHash]]);
+
         return isset($response['result']) && $response['result'] === 'success';
     }
 
@@ -250,6 +243,7 @@ class TransmissionClient extends BaseTorrentClient
     public function removeTorrent(string $infoHash): bool
     {
         $response = $this->rpc('torrent-remove', ['ids' => [$infoHash], 'delete-local-data' => true]);
+
         return isset($response['result']) && $response['result'] === 'success';
     }
 
@@ -260,7 +254,7 @@ class TransmissionClient extends BaseTorrentClient
     {
         $response = $this->rpc('torrent-get', [
             'ids' => [$infoHash],
-            'fields' => ['files']
+            'fields' => ['files'],
         ]);
 
         return $response['arguments']['torrents'][0]['files'] ?? [];
@@ -273,10 +267,11 @@ class TransmissionClient extends BaseTorrentClient
     {
         $response = $this->rpc('torrent-get', [
             'ids' => [$infoHash],
-            'fields' => ['status']
+            'fields' => ['status'],
         ]);
 
         $status = $response['arguments']['torrents'][0]['status'] ?? 0;
+
         return $status > 0;
     }
 }

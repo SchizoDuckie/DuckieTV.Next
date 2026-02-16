@@ -12,9 +12,13 @@ namespace App\DTOs\TorrentData;
 class QBittorrentData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?float $progress = null;
+
     public ?int $downloadSpeed = null;
+
     public ?string $state = null;
 
     /**
@@ -89,8 +93,6 @@ class QBittorrentData extends TorrentData
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
      * Valid started states: 'downloading', 'uploading', 'stalledDL', 'stalledUP'.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

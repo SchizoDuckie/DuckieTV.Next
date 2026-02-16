@@ -4,7 +4,7 @@ use App\Services\TMDBService;
 use Illuminate\Support\Facades\Http;
 
 it('builds image URLs from TMDB paths', function () {
-    $tmdb = new TMDBService();
+    $tmdb = new TMDBService;
 
     expect($tmdb->getImageUrl('/abc123.jpg', 'w500'))
         ->toBe('https://image.tmdb.org/t/p/w500/abc123.jpg')
@@ -23,7 +23,7 @@ it('fetches show images from TMDB API', function () {
         ]),
     ]);
 
-    $tmdb = new TMDBService();
+    $tmdb = new TMDBService;
     $images = $tmdb->getShowImages(1396);
 
     expect($images['poster'])->toBe('https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg')
@@ -35,7 +35,7 @@ it('returns nulls when TMDB API fails', function () {
         'api.themoviedb.org/*' => Http::response([], 404),
     ]);
 
-    $tmdb = new TMDBService();
+    $tmdb = new TMDBService;
     $images = $tmdb->getShowImages(99999);
 
     expect($images['poster'])->toBeNull()
@@ -51,7 +51,7 @@ it('handles missing image paths gracefully', function () {
         ]),
     ]);
 
-    $tmdb = new TMDBService();
+    $tmdb = new TMDBService;
     $images = $tmdb->getShowImages(100);
 
     expect($images['poster'])->toBeNull()

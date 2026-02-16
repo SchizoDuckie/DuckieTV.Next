@@ -16,33 +16,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * which in the original Angular app fired $rootScope.$broadcast events.
  * In Laravel, these will be replaced with Laravel Events (see TODO markers).
  *
- * @property int         $id               Primary key (was ID_Episode)
- * @property int         $serie_id         Foreign key to series table (was ID_Serie)
- * @property int|null    $season_id        Foreign key to seasons table (was ID_Season)
- * @property int|null    $tvdb_id          TheTVDB episode identifier
- * @property string|null $episodename      Episode title (max 255 chars)
- * @property int|null    $episodenumber    Episode number within the season
- * @property int|null    $seasonnumber     Season number (0 = special)
- * @property int|null    $firstaired       Air date as millisecond timestamp (bigInteger, matches original WebSQL)
- * @property string|null $firstaired_iso   Air date in ISO 8601 format (max 25 chars)
- * @property string|null $imdb_id          IMDB episode identifier (max 20 chars)
- * @property string|null $language         Episode language code (max 3 chars, e.g. "en")
- * @property string|null $overview         Episode description/synopsis
- * @property int|null    $rating           Average rating
- * @property int|null    $ratingcount      Number of ratings
- * @property string|null $filename         Associated filename (max 255 chars)
- * @property array|null  $images           Auto-serialized images data (stored as JSON TEXT)
- * @property int         $watched          Watched flag: 0=unwatched, 1=watched (default: 0)
- * @property int|null    $watchedAt        Timestamp (ms) when episode was marked as watched
- * @property int         $downloaded       Downloaded flag: 0=not downloaded, 1=downloaded (default: 0)
- * @property string|null $magnetHash       Magnet link info hash for the associated torrent (max 40 chars)
- * @property int|null    $trakt_id         Trakt.tv episode identifier, UNIQUE
- * @property int         $leaked           Leaked flag: 0=normal, 1=leaked early (default: 0)
- * @property int|null    $absolute         Absolute episode number (for anime ordering)
- * @property int|null    $tmdb_id          TheMovieDB episode identifier
+ * @property int $id Primary key (was ID_Episode)
+ * @property int $serie_id Foreign key to series table (was ID_Serie)
+ * @property int|null $season_id Foreign key to seasons table (was ID_Season)
+ * @property int|null $tvdb_id TheTVDB episode identifier
+ * @property string|null $episodename Episode title (max 255 chars)
+ * @property int|null $episodenumber Episode number within the season
+ * @property int|null $seasonnumber Season number (0 = special)
+ * @property int|null $firstaired Air date as millisecond timestamp (bigInteger, matches original WebSQL)
+ * @property string|null $firstaired_iso Air date in ISO 8601 format (max 25 chars)
+ * @property string|null $imdb_id IMDB episode identifier (max 20 chars)
+ * @property string|null $language Episode language code (max 3 chars, e.g. "en")
+ * @property string|null $overview Episode description/synopsis
+ * @property int|null $rating Average rating
+ * @property int|null $ratingcount Number of ratings
+ * @property string|null $filename Associated filename (max 255 chars)
+ * @property array|null $images Auto-serialized images data (stored as JSON TEXT)
+ * @property int $watched Watched flag: 0=unwatched, 1=watched (default: 0)
+ * @property int|null $watchedAt Timestamp (ms) when episode was marked as watched
+ * @property int $downloaded Downloaded flag: 0=not downloaded, 1=downloaded (default: 0)
+ * @property string|null $magnetHash Magnet link info hash for the associated torrent (max 40 chars)
+ * @property int|null $trakt_id Trakt.tv episode identifier, UNIQUE
+ * @property int $leaked Leaked flag: 0=normal, 1=leaked early (default: 0)
+ * @property int|null $absolute Absolute episode number (for anime ordering)
+ * @property int|null $tmdb_id TheMovieDB episode identifier
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- *
  * @property-read string $formatted_episode Computed: "s01e05" format (Blade accessor)
  * @property-read Serie  $serie
  * @property-read Season $season
@@ -90,9 +89,9 @@ class Episode extends Model
      * Static formatter: produce "s01e05" or "s02e10(35)" string from season/episode/absolute numbers.
      * Ported from Episode.prototype.formatEpisode() in CRUD.entities.js.
      *
-     * @param int|null $season   Season number (zero-padded to 2 digits)
-     * @param int|null $episode  Episode number (zero-padded to 2 digits)
-     * @param int|null $absolute Absolute episode number (for anime), shown in parentheses
+     * @param  int|null  $season  Season number (zero-padded to 2 digits)
+     * @param  int|null  $episode  Episode number (zero-padded to 2 digits)
+     * @param  int|null  $absolute  Absolute episode number (for anime), shown in parentheses
      */
     public static function formatEpisode(?int $season, ?int $episode, ?int $absolute = null): string
     {
@@ -100,7 +99,7 @@ class Episode extends Model
         $en = str_pad($episode ?? 0, 2, '0', STR_PAD_LEFT);
         $abs = '';
         if ($absolute !== null) {
-            $abs = '(' . str_pad($absolute, 2, '0', STR_PAD_LEFT) . ')';
+            $abs = '('.str_pad($absolute, 2, '0', STR_PAD_LEFT).')';
         }
 
         return "s{$sn}e{$en}{$abs}";
@@ -122,9 +121,10 @@ class Episode extends Model
      */
     public function getAirDate(): mixed
     {
-        if (!$this->firstaired || $this->firstaired == 0) {
+        if (! $this->firstaired || $this->firstaired == 0) {
             return '?';
         }
+
         return \Carbon\Carbon::createFromTimestampMs($this->firstaired);
     }
 
@@ -134,9 +134,10 @@ class Episode extends Model
      */
     public function getAirTime(): string
     {
-        if (!$this->firstaired || $this->firstaired == 0) {
+        if (! $this->firstaired || $this->firstaired == 0) {
             return '?';
         }
+
         return \Carbon\Carbon::createFromTimestampMs($this->firstaired)->format('H:i');
     }
 
@@ -190,8 +191,8 @@ class Episode extends Model
      * Original fired: $rootScope.$broadcast('episode:marked:watched', this)
      * and optionally $rootScope.$broadcast('episode:marked:downloaded', this)
      *
-     * @param bool $watchedDownloadedPaired When true (default), also marks as downloaded.
-     *                                      Logic: "if you watched it, you must have downloaded it"
+     * @param  bool  $watchedDownloadedPaired  When true (default), also marks as downloaded.
+     *                                         Logic: "if you watched it, you must have downloaded it"
      */
     public function markWatched(bool $watchedDownloadedPaired = true): self
     {
@@ -252,9 +253,9 @@ class Episode extends Model
      * Original fired: $rootScope.$broadcast('episode:marked:notdownloaded', this)
      * and optionally $rootScope.$broadcast('episode:marked:notwatched', this)
      *
-     * @param bool $watchedDownloadedPaired When true (default), also marks as not watched
-     *                                      and clears magnetHash.
-     *                                      Logic: "if it's not downloaded, you can't have watched it"
+     * @param  bool  $watchedDownloadedPaired  When true (default), also marks as not watched
+     *                                         and clears magnetHash.
+     *                                         Logic: "if it's not downloaded, you can't have watched it"
      */
     public function markNotDownloaded(bool $watchedDownloadedPaired = true): self
     {
@@ -279,6 +280,7 @@ class Episode extends Model
     public function markLeaked(): self
     {
         $this->update(['leaked' => 1]);
+
         // TODO: Fire Laravel event (EpisodeMarkedLeaked) — Phase 5
         return $this;
     }
@@ -289,6 +291,7 @@ class Episode extends Model
     public function markNotLeaked(): self
     {
         $this->update(['leaked' => 0]);
+
         // TODO: Fire Laravel event (EpisodeMarkedNotLeaked) — Phase 5
         return $this;
     }

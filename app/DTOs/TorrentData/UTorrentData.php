@@ -15,8 +15,11 @@ namespace App\DTOs\TorrentData;
 class UTorrentData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?float $progress = null;
+
     public ?string $status = null;
 
     /**
@@ -92,8 +95,6 @@ class UTorrentData extends TorrentData
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
      * Valid started states: 'downloading', 'seeding', 'started'.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

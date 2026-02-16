@@ -23,6 +23,7 @@ class SearchCommand extends Command
     protected $description = 'Search for TV shows on Trakt and add to favorites';
 
     protected TraktService $trakt;
+
     protected FavoritesService $favorites;
 
     public function __construct(TraktService $trakt, FavoritesService $favorites)
@@ -39,7 +40,7 @@ class SearchCommand extends Command
     {
         $query = $this->argument('query');
 
-        if (!$query) {
+        if (! $query) {
             $query = $this->ask('What show are you looking for?');
         }
 
@@ -47,7 +48,8 @@ class SearchCommand extends Command
         $results = $this->trakt->search($query);
 
         if (empty($results)) {
-            $this->error("No shows found.");
+            $this->error('No shows found.');
+
             return 1;
         }
 
@@ -70,7 +72,8 @@ class SearchCommand extends Command
             $serie = $this->favorites->addFavorite($data);
             $this->info("Successfully added <fg=green;options=bold>{$serie->name}</>!");
         } catch (\Exception $e) {
-            $this->error("Failed to add show: " . $e->getMessage());
+            $this->error('Failed to add show: '.$e->getMessage());
+
             return 1;
         }
 

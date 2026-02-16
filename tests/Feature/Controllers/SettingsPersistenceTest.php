@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Controllers;
 
-use Tests\TestCase;
 use App\Models\Setting;
 use App\Services\SettingsService;
-use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
 
 class SettingsPersistenceTest extends TestCase
 {
@@ -27,7 +27,7 @@ class SettingsPersistenceTest extends TestCase
             'transmission.port' => 9091,
             'transmission.use_auth' => true,
             'transmission.username' => 'nasuser',
-            'transmission.password' => 'naspass'
+            'transmission.password' => 'naspass',
         ]);
 
         $response->assertStatus(200);
@@ -37,18 +37,18 @@ class SettingsPersistenceTest extends TestCase
         $this->assertEquals('http://192.168.1.100', settings('transmission.server'));
         $this->assertEquals(9091, settings('transmission.port'));
         $this->assertEquals('nasuser', settings('transmission.username'));
-        
+
         // Check database directly to be sure
         $this->assertDatabaseHas('settings', [
             'key' => 'transmission.server',
-            'value' => 'http://192.168.1.100'
+            'value' => 'http://192.168.1.100',
         ]);
         $this->assertDatabaseHas('settings', [
             'key' => 'transmission.port',
-            'value' => '9091'
+            'value' => '9091',
         ]);
     }
-    
+
     #[Test]
     public function it_handles_unchecked_checkboxes()
     {
@@ -65,9 +65,9 @@ class SettingsPersistenceTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        
+
         // It SHOULD be false now
-        $this->assertFalse(settings('transmission.use_auth'), "Unchecked checkbox should persist as false");
+        $this->assertFalse(settings('transmission.use_auth'), 'Unchecked checkbox should persist as false');
     }
 
     #[Test]
@@ -76,16 +76,16 @@ class SettingsPersistenceTest extends TestCase
         // Set initial state
         settings('torrenting.client', 'Transmission');
         settings('torrenting.enabled', true);
-        
+
         // Update ONLY one setting, MISSING torrenting.client
         $response = $this->postJson(route('settings.update', 'torrent'), [
-            'transmission.server' => 'http://new-server'
+            'transmission.server' => 'http://new-server',
         ]);
 
         $response->assertStatus(200);
         $this->assertEquals('http://new-server', settings('transmission.server'));
-        
+
         // CRITICAL: torrenting.enabled should STILL be true, not defaulted to false!
-        $this->assertTrue(settings('torrenting.enabled'), "Partial update should not reset unrelated booleans");
+        $this->assertTrue(settings('torrenting.enabled'), 'Partial update should not reset unrelated booleans');
     }
 }

@@ -11,9 +11,9 @@
  * @see \App\Services\TorrentSearchService
  */
 
-use App\Services\TorrentSearchService;
-use App\Services\TorrentSearchEngines\SearchEngineInterface;
 use App\Services\SettingsService;
+use App\Services\TorrentSearchEngines\SearchEngineInterface;
+use App\Services\TorrentSearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -293,7 +293,7 @@ it('marks the default engine correctly', function () {
     $response = $this->getJson(route('torrents.engines'));
 
     $engines = $response->json();
-    $defaults = array_filter($engines, fn($e) => $e['isDefault']);
+    $defaults = array_filter($engines, fn ($e) => $e['isDefault']);
 
     expect(count($defaults))->toBe(1);
 

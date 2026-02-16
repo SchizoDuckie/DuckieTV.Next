@@ -2,7 +2,7 @@
 
 use App\Services\SettingsService;
 
-if (!function_exists('settings')) {
+if (! function_exists('settings')) {
     /**
      * Get or set a setting value.
      *
@@ -20,6 +20,7 @@ if (!function_exists('settings')) {
 
         if ($value !== null) {
             $service->set($key, $value);
+
             return $value;
         }
 

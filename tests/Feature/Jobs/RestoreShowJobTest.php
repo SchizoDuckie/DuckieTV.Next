@@ -17,20 +17,21 @@ class RestoreShowJobTest extends TestCase
         $batch = Mockery::mock(Batch::class);
         $batch->shouldReceive('cancelled')->andReturn(false);
         $batch->shouldReceive('progress')->andReturn(50);
-        
+
         // Mock BackupService
         $service = Mockery::mock(BackupService::class);
         $service->shouldReceive('restoreShow')
             ->with('123', [], Mockery::type('callable'))
             ->once()
-            ->andReturnUsing(function($id, $data, $callback) {
+            ->andReturnUsing(function ($id, $data, $callback) {
                 $callback(100, 'Done');
+
                 return true;
             });
 
         // Mock Cache
         Cache::shouldReceive('get')->andReturn(['logs' => []]);
-        Cache::shouldReceive('put')->once()->with('backup_progress', Mockery::on(function($data) {
+        Cache::shouldReceive('put')->once()->with('backup_progress', Mockery::on(function ($data) {
             return $data['percent'] === 50 && $data['message'] === 'Done';
         }));
 
@@ -39,7 +40,7 @@ class RestoreShowJobTest extends TestCase
         $job->setBatch($batch);
 
         $job->handle($service);
-        
+
         $this->assertTrue(true);
     }
 
@@ -60,14 +61,17 @@ class RestoreShowJobTest extends TestCase
     }
 }
 
-class TestRestoreShowJob extends RestoreShowJob {
+class TestRestoreShowJob extends RestoreShowJob
+{
     protected $testBatch;
 
-    public function setBatch($batch) {
+    public function setBatch($batch)
+    {
         $this->testBatch = $batch;
     }
 
-    public function batch() {
+    public function batch()
+    {
         return $this->testBatch;
     }
 }

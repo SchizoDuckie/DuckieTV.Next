@@ -6,10 +6,10 @@ use App\Services\SettingsService;
 
 /**
  * Vuze Client Implementation.
- * 
- * Vuze uses the Transmission RPC API, so we inherit all logic 
+ *
+ * Vuze uses the Transmission RPC API, so we inherit all logic
  * from TransmissionClient and simply override the configuration mapping.
- * 
+ *
  * @see Vuze.js in DuckieTV-angular.
  */
 class VuzeClient extends TransmissionClient
@@ -36,18 +36,16 @@ class VuzeClient extends TransmissionClient
 
     /**
      * Map configuration to Vuze specific settings.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'       => 'vuze.server',
-            'port'         => 'vuze.port',
-            'path'         => 'vuze.path',
-            'username'     => 'vuze.username',
-            'password'     => 'vuze.password',
-            'use_auth'     => 'vuze.use_auth',
+            'server' => 'vuze.server',
+            'port' => 'vuze.port',
+            'path' => 'vuze.path',
+            'username' => 'vuze.username',
+            'password' => 'vuze.password',
+            'use_auth' => 'vuze.use_auth',
             'progressX100' => 'vuze.progressX100',
         ];
     }

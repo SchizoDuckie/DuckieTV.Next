@@ -2,16 +2,16 @@
 
 namespace App\Services\TorrentClients;
 
-use App\Services\SettingsService;
 use App\DTOs\TorrentData\Aria2Data;
-use Illuminate\Support\Facades\Http;
+use App\Services\SettingsService;
 use Exception;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Aria2 Client Implementation.
- * 
+ *
  * Handles communication with Aria2 via its JSON-RPC interface.
- * 
+ *
  * @see Aria2.js in DuckieTV-angular.
  * @see https://aria2.github.io/manual/en/html/aria2c.html#rpc-interface
  */
@@ -35,61 +35,56 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for Aria2.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
             'server' => 'aria2.server',
-            'port'   => 'aria2.port',
-            'token'  => 'aria2.token',
+            'port' => 'aria2.port',
+            'token' => 'aria2.token',
         ];
     }
 
     /**
      * Test connection to Aria2 by getting version info.
-     * 
-     * @return bool
      */
     public function connect(): bool
     {
         $result = $this->rpc('getVersion');
+
         return isset($result['version']);
     }
 
     /**
      * Get list of torrents from Aria2.
-     * 
+     *
      * Aria2 requires multiple calls to get all active, waiting, and stopped tasks.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
         try {
             // multicall across different statuses
             $paramArray = [
-                ['methodName' => 'aria2.tellActive', 'params' => ['token:' . $this->config['token']]],
-                ['methodName' => 'aria2.tellWaiting', 'params' => ['token:' . $this->config['token'], 0, 9999]],
-                ['methodName' => 'aria2.tellStopped', 'params' => ['token:' . $this->config['token'], 0, 9999]]
+                ['methodName' => 'aria2.tellActive', 'params' => ['token:'.$this->config['token']]],
+                ['methodName' => 'aria2.tellWaiting', 'params' => ['token:'.$this->config['token'], 0, 9999]],
+                ['methodName' => 'aria2.tellStopped', 'params' => ['token:'.$this->config['token'], 0, 9999]],
             ];
 
             $response = Http::post($this->getRpcUrl(), [
                 'jsonrpc' => '2.0',
-                'method'  => 'system.multicall',
-                'id'      => 'DuckieTV',
-                'params'  => [$paramArray]
+                'method' => 'system.multicall',
+                'id' => 'DuckieTV',
+                'params' => [$paramArray],
             ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return [];
             }
 
             $data = $response->json();
             $torrents = [];
 
-            if (!isset($data['result'])) {
+            if (! isset($data['result'])) {
                 return [];
             }
 
@@ -100,7 +95,7 @@ class Aria2Client extends BaseTorrentClient
                 ->map(fn ($task) => new Aria2Data([
                     'infoHash' => strtoupper($task['infoHash'] ?? $task['gid']),
                     'name' => $task['bittorrent']['info']['name'] ?? ($task['files'][0]['path'] ?? 'Unknown'),
-                    'progress' => $task['totalLength'] > 0 ? (float)(($task['completedLength'] / $task['totalLength']) * 100) : 0,
+                    'progress' => $task['totalLength'] > 0 ? (float) (($task['completedLength'] / $task['totalLength']) * 100) : 0,
                     'status' => $task['status'],
                 ]))->all();
 
@@ -111,11 +106,6 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Add a magnet link to Aria2.
-     * 
-     * @param string $magnet
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -126,7 +116,8 @@ class Aria2Client extends BaseTorrentClient
 
         try {
             $result = $this->rpc('addUri', $params);
-            return !empty($result);
+
+            return ! empty($result);
         } catch (Exception $e) {
             return false;
         }
@@ -134,13 +125,6 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -149,13 +133,8 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw binary data.
-     * 
-     * @param string $data Raw .torrent file content
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
+     *
+     * @param  string  $data  Raw .torrent file content
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -167,7 +146,8 @@ class Aria2Client extends BaseTorrentClient
 
         try {
             $result = $this->rpc('addTorrent', $params);
-            return !empty($result);
+
+            return ! empty($result);
         } catch (Exception $e) {
             return false;
         }
@@ -175,32 +155,29 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Execute a JSON-RPC method.
-     * 
-     * @param string $method
-     * @param array $params
-     * @return mixed
+     *
      * @throws Exception
      */
     protected function rpc(string $method, array $params = []): mixed
     {
         // Add auth token if set
-        array_unshift($params, 'token:' . ($this->config['token'] ?? ''));
+        array_unshift($params, 'token:'.($this->config['token'] ?? ''));
 
         /** @var \Illuminate\Http\Client\Response $response */
         $response = Http::post($this->getRpcUrl(), [
             'jsonrpc' => '2.0',
-            'method'  => 'aria2.' . $method,
-            'id'      => 'DuckieTV',
-            'params'  => $params
+            'method' => 'aria2.'.$method,
+            'id' => 'DuckieTV',
+            'params' => $params,
         ]);
 
-        if (!$response->successful()) {
-            throw new Exception("Aria2 RPC error: " . $response->status());
+        if (! $response->successful()) {
+            throw new Exception('Aria2 RPC error: '.$response->status());
         }
 
         $data = $response->json();
         if (isset($data['error'])) {
-            throw new Exception("Aria2 RPC Error: " . ($data['error']['message'] ?? 'Unknown error'));
+            throw new Exception('Aria2 RPC Error: '.($data['error']['message'] ?? 'Unknown error'));
         }
 
         return $data['result'] ?? null;
@@ -213,6 +190,7 @@ class Aria2Client extends BaseTorrentClient
     {
         try {
             $this->rpc('unpause', [$infoHash]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -226,6 +204,7 @@ class Aria2Client extends BaseTorrentClient
     {
         try {
             $this->rpc('pause', [$infoHash]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -247,6 +226,7 @@ class Aria2Client extends BaseTorrentClient
     {
         try {
             $this->rpc('remove', [$infoHash]);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -260,6 +240,7 @@ class Aria2Client extends BaseTorrentClient
     {
         try {
             $result = $this->rpc('getFiles', [$infoHash]);
+
             return $result ?? [];
         } catch (Exception $e) {
             return [];
@@ -273,6 +254,7 @@ class Aria2Client extends BaseTorrentClient
     {
         try {
             $result = $this->rpc('tellStatus', [$infoHash, ['status']]);
+
             return isset($result['status']) && $result['status'] === 'active';
         } catch (Exception $e) {
             return false;
@@ -281,11 +263,9 @@ class Aria2Client extends BaseTorrentClient
 
     /**
      * Get the full RPC endpoint URL.
-     * 
-     * @return string
      */
     protected function getRpcUrl(): string
     {
-        return rtrim($this->config['server'], '/') . ':' . $this->config['port'] . '/jsonrpc';
+        return rtrim($this->config['server'], '/').':'.$this->config['port'].'/jsonrpc';
     }
 }

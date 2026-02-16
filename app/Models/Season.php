@@ -13,20 +13,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Original table: "Seasons" with 11 fields and 8 schema migrations (versions 2-8).
  * Unique constraint on (serie_id, seasonnumber, trakt_id).
  *
- * @property int         $id               Primary key (was ID_Season)
- * @property int         $serie_id         Foreign key to series table (was ID_Serie)
- * @property string|null $poster           Season poster image URL (max 255 chars)
- * @property string|null $overview         Season description/synopsis
- * @property int         $seasonnumber     Season number (0 = specials)
- * @property int|null    $ratings          Average rating for this season
- * @property int|null    $ratingcount      Number of ratings for this season
- * @property bool        $watched          Whether all episodes in this season are watched (default: false)
- * @property int         $notWatchedCount  Cached count of unwatched episodes in this season (default: 0)
- * @property int|null    $trakt_id         Trakt.tv season identifier
- * @property int|null    $tmdb_id          TheMovieDB season identifier
+ * @property int $id Primary key (was ID_Season)
+ * @property int $serie_id Foreign key to series table (was ID_Serie)
+ * @property string|null $poster Season poster image URL (max 255 chars)
+ * @property string|null $overview Season description/synopsis
+ * @property int $seasonnumber Season number (0 = specials)
+ * @property int|null $ratings Average rating for this season
+ * @property int|null $ratingcount Number of ratings for this season
+ * @property bool $watched Whether all episodes in this season are watched (default: false)
+ * @property int $notWatchedCount Cached count of unwatched episodes in this season (default: 0)
+ * @property int|null $trakt_id Trakt.tv season identifier
+ * @property int|null $tmdb_id TheMovieDB season identifier
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- *
  * @property-read Serie $serie
  * @property-read \Illuminate\Database\Eloquent\Collection<Episode> $episodes
  */
@@ -84,7 +83,7 @@ class Season extends Model
      * Also sets the season's own watched flag.
      * Ported from Season.prototype.markSeasonAsWatched().
      *
-     * @param bool $watchedDownloadedPaired When true, also marks episodes as downloaded
+     * @param  bool  $watchedDownloadedPaired  When true, also marks episodes as downloaded
      */
     public function markSeasonAsWatched(bool $watchedDownloadedPaired = true): void
     {

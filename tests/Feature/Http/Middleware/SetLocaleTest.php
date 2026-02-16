@@ -2,10 +2,10 @@
 
 use App\Http\Middleware\SetLocale;
 use App\Services\TranslationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -16,12 +16,13 @@ it('sets the locale if valid', function () {
 
     // Use settings helper to ensure service cache is updated
     settings('application.locale', 'nl_NL');
-    
+
     $middleware = new SetLocale($translationService);
     $request = Request::create('/', 'GET');
-    
+
     $middleware->handle($request, function ($req) {
         expect(App::getLocale())->toBe('nl_NL');
+
         return response('OK');
     });
 });
@@ -37,6 +38,7 @@ it('falls back to en_US if en is requested', function () {
 
     $middleware->handle($request, function ($req) {
         expect(App::getLocale())->toBe('en_US');
+
         return response('OK');
     });
 });
@@ -52,6 +54,7 @@ it('normalizes locale strings', function () {
 
     $middleware->handle($request, function ($req) {
         expect(App::getLocale())->toBe('en_US');
+
         return response('OK');
     });
 });
@@ -68,6 +71,7 @@ it('falls back to first available locale if invalid', function () {
 
     $middleware->handle($request, function ($req) {
         expect(App::getLocale())->toBe('de_DE');
+
         return response('OK');
     });
 });
@@ -78,15 +82,16 @@ it('does nothing if no setting and no valid fallback', function () {
     App::setLocale('default');
 
     $translationService = Mockery::mock(TranslationService::class);
-    $translationService->shouldReceive('getAvailableLocales')->andReturn([]); 
+    $translationService->shouldReceive('getAvailableLocales')->andReturn([]);
 
     // No setting created
-    
+
     $middleware = new SetLocale($translationService);
     $request = Request::create('/', 'GET');
 
     $middleware->handle($request, function ($req) {
         expect(App::getLocale())->toBe('default');
+
         return response('OK');
     });
 });

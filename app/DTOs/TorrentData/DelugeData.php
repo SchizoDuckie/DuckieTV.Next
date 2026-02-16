@@ -15,10 +15,15 @@ namespace App\DTOs\TorrentData;
 class DelugeData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?float $progress = null;
+
     public ?string $state = null;
+
     public ?int $downloadSpeed = null;
+
     public ?string $save_path = null;
 
     /**
@@ -92,8 +97,6 @@ class DelugeData extends TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

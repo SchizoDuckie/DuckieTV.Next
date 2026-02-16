@@ -3,7 +3,6 @@
 namespace App\Services\TorrentSearchEngines;
 
 use App\Services\SettingsService;
-use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Idope search engine implementation.
@@ -17,7 +16,7 @@ class IdopeEngine extends GenericSearchEngine
             'mirror' => $settings->get('mirror.Idope', 'https://idope.se'),
             'includeBaseURL' => true,
             'endpoints' => [
-                'search' => '/torrent-list/%s/?&o=%o'
+                'search' => '/torrent-list/%s/?&o=%o',
             ],
             'selectors' => [
                 'resultContainer' => 'div.resultdiv',
@@ -26,22 +25,22 @@ class IdopeEngine extends GenericSearchEngine
                 'leechers' => ['div.resultdivbottonseed', 'innerText'],
                 'size' => ['div.resultdivbottonlength', 'innerText'],
                 'detailUrl' => ['div.resultdivtop a', 'href'],
-                'magnetUrl' => ['.hideinfohash', 'innerText']
+                'magnetUrl' => ['.hideinfohash', 'innerText'],
             ],
             'orderby' => [
                 'age' => ['d' => '-3', 'a' => '3'],
                 'seeders' => ['d' => '-1', 'a' => '1'],
-                'size' => ['d' => '-2', 'a' => '2']
-            ]
+                'size' => ['d' => '-2', 'a' => '2'],
+            ],
         ]);
     }
 
     protected function getPropertyForSelector(\Symfony\Component\DomCrawler\Crawler $node, ?array $propertyConfig): ?string
     {
         $value = parent::getPropertyForSelector($node, $propertyConfig);
-        
+
         if ($value && $propertyConfig && $propertyConfig[0] === '.hideinfohash') {
-             return 'magnet:?xt=urn:btih:' . trim($value);
+            return 'magnet:?xt=urn:btih:'.trim($value);
         }
 
         return $value;

@@ -3,7 +3,6 @@
 namespace App\Console\Commands\DuckieTV;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class FixDatabaseCommand extends Command
 {
@@ -40,13 +39,14 @@ class FixDatabaseCommand extends Command
 
         if (empty($this->databases)) {
             $this->components->error('No SQLite database files found.');
+
             return self::FAILURE;
         }
 
         $hasErrors = false;
 
         foreach ($this->databases as $label => $path) {
-            if (!$this->fixDatabase($label, $path)) {
+            if (! $this->fixDatabase($label, $path)) {
                 $hasErrors = true;
             }
         }
@@ -82,7 +82,7 @@ class FixDatabaseCommand extends Command
         }
 
         // Fallback: check the standard path if config doesn't resolve
-        if (!isset($this->databases['NativePHP (nativephp)'])) {
+        if (! isset($this->databases['NativePHP (nativephp)'])) {
             $fallback = database_path('nativephp.sqlite');
             if (file_exists($fallback)) {
                 $this->databases['NativePHP (nativephp)'] = $fallback;
@@ -141,19 +141,19 @@ class FixDatabaseCommand extends Command
                 $this->components->twoColumnDetail('  Integrity check', '<fg=green>OK ✓</>');
             } else {
                 $this->components->twoColumnDetail('  Integrity check', "<fg=red>FAILED: {$integrity}</>");
-                $this->components->warn("  Database may be corrupted. Consider restoring from a backup.");
+                $this->components->warn('  Database may be corrupted. Consider restoring from a backup.');
                 $ok = false;
             }
 
             // 5. Check for stale WAL file size (can indicate unclean shutdown)
-            $walFile = $path . '-wal';
+            $walFile = $path.'-wal';
             if (file_exists($walFile)) {
                 $walSize = filesize($walFile);
                 $walSizeHuman = $this->humanFilesize($walSize);
                 $this->components->twoColumnDetail('  WAL file size', $walSizeHuman);
 
                 if ($walSize > 10 * 1024 * 1024) { // > 10MB
-                    $this->components->warn("  Large WAL file detected. Running checkpoint...");
+                    $this->components->warn('  Large WAL file detected. Running checkpoint...');
                     $pdo->exec('PRAGMA wal_checkpoint(TRUNCATE)');
                     $this->components->twoColumnDetail('  WAL checkpoint', '<fg=green>Compacted ✓</>');
                 }
@@ -176,8 +176,9 @@ class FixDatabaseCommand extends Command
     {
         $nativeDb = $this->databases['NativePHP (nativephp)'] ?? null;
 
-        if (!$nativeDb) {
+        if (! $nativeDb) {
             $this->components->info('No NativePHP database found, skipping job cleanup.');
+
             return;
         }
 
@@ -191,8 +192,9 @@ class FixDatabaseCommand extends Command
 
             // Check if jobs table exists
             $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'")->fetchColumn();
-            if (!$tables) {
+            if (! $tables) {
                 $this->components->twoColumnDetail('  Jobs table', 'Not found (clean state)');
+
                 return;
             }
 
@@ -237,7 +239,7 @@ class FixDatabaseCommand extends Command
 
                     $this->components->twoColumnDetail('  Flushed all jobs', '<fg=green>Done ✓</>');
                 }
-            } elseif (!$this->option('flush') && ($stuckCount + $failedCount > 0)) {
+            } elseif (! $this->option('flush') && ($stuckCount + $failedCount > 0)) {
                 $this->line('');
                 $this->line('  <fg=yellow>Tip:</> Run with <fg=white>--flush</> to also clear all pending and failed jobs.');
             }
@@ -261,6 +263,7 @@ class FixDatabaseCommand extends Command
             $size /= 1024;
             $i++;
         }
-        return round($size, 1) . ' ' . $units[$i];
+
+        return round($size, 1).' '.$units[$i];
     }
 }

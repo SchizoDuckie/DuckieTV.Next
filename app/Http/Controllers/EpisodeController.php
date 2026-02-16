@@ -27,7 +27,7 @@ class EpisodeController extends Controller
                     $torrents = $client->getTorrents();
                     $showName = strtolower($serie->name);
                     $episodeCode = strtolower($episode->formatted_episode);
-                    
+
                     foreach ($torrents as $torrent) {
                         $name = strtolower($torrent->getName());
                         if (str_contains($name, $showName) && str_contains($name, $episodeCode)) {

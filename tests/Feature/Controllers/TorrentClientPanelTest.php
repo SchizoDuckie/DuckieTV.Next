@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Controllers;
 
-use App\Services\TorrentClientService;
 use App\Services\TorrentClients\TorrentClientInterface;
+use App\Services\TorrentClientService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -29,7 +29,7 @@ class TorrentClientPanelTest extends TestCase
                 'name' => 'Test Torrent',
                 'progress' => 50,
                 'status' => 4, // downloading
-            ])
+            ]),
         ]);
 
         $mockService = Mockery::mock(TorrentClientService::class);
@@ -57,8 +57,8 @@ class TorrentClientPanelTest extends TestCase
                 'progress' => 50,
                 'status' => 4, // downloading
                 'downloadSpeed' => 102400, // 100 kB/s
-                'files' => [['name' => 'file1.mkv']]
-            ])
+                'files' => [['name' => 'file1.mkv']],
+            ]),
         ]);
         // Add this expectation:
         $mockClient->shouldReceive('getTorrentFiles')->with('abc123')->andReturn([['name' => 'file1.mkv']]);
@@ -89,7 +89,7 @@ class TorrentClientPanelTest extends TestCase
                 'progress' => 50,
                 'status' => 4,
                 'downloadSpeed' => 102400,
-            ])
+            ]),
         ]);
 
         $mockService = Mockery::mock(TorrentClientService::class);
@@ -110,8 +110,8 @@ class TorrentClientPanelTest extends TestCase
                     'progress' => 50.0,
                     'downloadSpeed' => 102400,
                     'status' => 4,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -166,8 +166,7 @@ class TorrentClientPanelTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson([
             'connected' => false,
-            'error' => 'Connection failed: Connection Timeout'
+            'error' => 'Connection failed: Connection Timeout',
         ]);
     }
 }
-

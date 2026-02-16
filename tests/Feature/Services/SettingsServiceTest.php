@@ -87,7 +87,7 @@ it('restores settings from database on fresh instance', function () {
     Setting::create(['key' => 'torrenting.client', 'value' => 'Deluge']);
 
     // Create a fresh service instance (simulates app restart)
-    $service = new SettingsService();
+    $service = new SettingsService;
     expect($service->get('torrenting.client'))->toBe('Deluge');
 });
 

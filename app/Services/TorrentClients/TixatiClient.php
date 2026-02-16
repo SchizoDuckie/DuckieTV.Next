@@ -4,15 +4,15 @@ namespace App\Services\TorrentClients;
 
 use App\DTOs\TorrentData\TixatiData;
 use App\Services\SettingsService;
-use Illuminate\Support\Facades\Http;
 use Exception;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Tixati Client Implementation.
- * 
+ *
  * Handles communication with Tixati via its HTML-based Web UI.
- * 
+ *
  * @see Tixati.js in DuckieTV-angular.
  */
 class TixatiClient extends BaseTorrentClient
@@ -40,14 +40,12 @@ class TixatiClient extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for Tixati.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'   => 'tixati.server',
-            'port'     => 'tixati.port',
+            'server' => 'tixati.server',
+            'port' => 'tixati.port',
             'use_auth' => 'tixati.use_auth',
             'username' => 'tixati.username',
             'password' => 'tixati.password',
@@ -56,8 +54,6 @@ class TixatiClient extends BaseTorrentClient
 
     /**
      * Test connection to Tixati.
-     * 
-     * @return bool
      */
     public function connect(): bool
     {
@@ -67,21 +63,21 @@ class TixatiClient extends BaseTorrentClient
                 $request->withBasicAuth($this->config['username'], $this->config['password']);
             }
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->get($this->getBaseUrl() . '/home');
+            $response = $request->get($this->getBaseUrl().'/home');
             $this->connected = $response->successful();
+
             return $this->connected;
         } catch (Exception $e) {
             $this->connected = false;
+
             return false;
         }
     }
 
     /**
      * Get list of torrents from Tixati.
-     * 
+     *
      * Tixati returns HTML, which we must scrape.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
@@ -90,19 +86,21 @@ class TixatiClient extends BaseTorrentClient
             if ($this->config['use_auth']) {
                 $request->withBasicAuth($this->config['username'], $this->config['password']);
             }
-            
+
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->get($this->getBaseUrl() . '/transfers');
-            
-            if (!$response->successful()) {
+            $response = $request->get($this->getBaseUrl().'/transfers');
+
+            if (! $response->successful()) {
                 return [];
             }
 
             $crawler = new Crawler($response->body());
-            
+
             return collect($crawler->filter('.xferslist > tbody > tr')->each(function (Crawler $node) {
                 $tds = $node->filter('td');
-                if ($tds->count() < 9) return null;
+                if ($tds->count() < 9) {
+                    return null;
+                }
 
                 $guidMatch = [];
                 if (preg_match('/\/transfers\/([a-z-A-Z0-9]+)\/details/', $tds->eq(1)->filter('a')->attr('href'), $guidMatch)) {
@@ -113,15 +111,16 @@ class TixatiClient extends BaseTorrentClient
                         'infoHash' => strtoupper($hash),
                         'name' => $tds->eq(1)->text(),
                         'bytes' => $tds->eq(2)->text(),
-                        'progress' => (int)$tds->eq(3)->text(),
+                        'progress' => (int) $tds->eq(3)->text(),
                         'status' => $tds->eq(4)->text(),
-                        'downSpeed' => (int)(str_replace(',', '', $tds->eq(5)->text()) ?: 0) * 1000,
-                        'upSpeed' => (int)(str_replace(',', '', $tds->eq(6)->text()) ?: 0) * 1000,
+                        'downSpeed' => (int) (str_replace(',', '', $tds->eq(5)->text()) ?: 0) * 1000,
+                        'upSpeed' => (int) (str_replace(',', '', $tds->eq(6)->text()) ?: 0) * 1000,
                         'priority' => $tds->eq(7)->text(),
                         'eta' => $tds->eq(8)->text(),
-                        'guid'   => $guid,
+                        'guid' => $guid,
                     ]);
                 }
+
                 return null;
             }))->filter()->values()->all();
         } catch (Exception $e) {
@@ -187,12 +186,13 @@ class TixatiClient extends BaseTorrentClient
                 $request->withBasicAuth($this->config['username'], $this->config['password']);
             }
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->get($this->getBaseUrl() . "/transfers/{$guid}/files");
-            if (!$response->successful()) {
+            $response = $request->get($this->getBaseUrl()."/transfers/{$guid}/files");
+            if (! $response->successful()) {
                 return [];
             }
             $crawler = new Crawler($response->body());
-            return $crawler->filter('.listtable > tbody > tr')->each(fn(Crawler $node) => [
+
+            return $crawler->filter('.listtable > tbody > tr')->each(fn (Crawler $node) => [
                 'name' => $node->filter('td')->eq(1)->text(),
                 'priority' => $node->filter('td')->eq(2)->text(),
                 'bytes' => $node->filter('td')->eq(3)->text(),
@@ -210,7 +210,8 @@ class TixatiClient extends BaseTorrentClient
     {
         try {
             $torrents = $this->getTorrents();
-            $torrent = collect($torrents)->first(fn($t) => strtoupper($t->infoHash) === strtoupper($infoHash));
+            $torrent = collect($torrents)->first(fn ($t) => strtoupper($t->infoHash) === strtoupper($infoHash));
+
             return $torrent && stripos($torrent->status, 'offline') === false;
         } catch (Exception $e) {
             return false;
@@ -222,23 +223,19 @@ class TixatiClient extends BaseTorrentClient
      */
     protected function execute(string $guid, array $formData): bool
     {
-        $url = $this->getBaseUrl() . "/transfers/{$guid}/options/action";
+        $url = $this->getBaseUrl()."/transfers/{$guid}/options/action";
         $request = Http::asForm();
         if ($this->config['use_auth']) {
             $request->withBasicAuth($this->config['username'], $this->config['password']);
         }
         /** @var \Illuminate\Http\Client\Response $response */
         $response = $request->post($url, $formData);
+
         return $response->successful();
     }
 
     /**
      * Add a magnet link to Tixati.
-     * 
-     * @param string $magnet
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -249,9 +246,9 @@ class TixatiClient extends BaseTorrentClient
             }
 
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->post($this->getBaseUrl() . '/transfers/action', [
+            $response = $request->post($this->getBaseUrl().'/transfers/action', [
                 'addlinktext' => $magnet,
-                'addlink'     => 'Add'
+                'addlink' => 'Add',
             ]);
 
             return $response->successful();
@@ -262,13 +259,6 @@ class TixatiClient extends BaseTorrentClient
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -277,13 +267,6 @@ class TixatiClient extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw binary data.
-     * 
-     * @param string $data
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -294,10 +277,11 @@ class TixatiClient extends BaseTorrentClient
             }
 
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->attach('metafile', $data, $releaseName . '.torrent')
-                ->post($this->getBaseUrl() . '/transfers/action', [
-                    'addmetafile' => 'Add'
+            $response = $request->attach('metafile', $data, $releaseName.'.torrent')
+                ->post($this->getBaseUrl().'/transfers/action', [
+                    'addmetafile' => 'Add',
                 ]);
+
             return $response->successful();
         } catch (Exception $e) {
             return false;
@@ -306,11 +290,9 @@ class TixatiClient extends BaseTorrentClient
 
     /**
      * Get the base URL.
-     * 
-     * @return string
      */
     protected function getBaseUrl(): string
     {
-        return rtrim($this->config['server'], '/') . ':' . $this->config['port'];
+        return rtrim($this->config['server'], '/').':'.$this->config['port'];
     }
 }

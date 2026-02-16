@@ -22,14 +22,23 @@ namespace App\DTOs\TorrentData;
 class TixatiData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?string $guid = null;
+
     public ?int $progress = null;
+
     public ?string $status = null;
+
     public ?int $downSpeed = null;
+
     public ?int $upSpeed = null;
+
     public ?string $bytes = null;
+
     public ?string $priority = null;
+
     public ?string $eta = null;
 
     /**
@@ -110,8 +119,6 @@ class TixatiData extends TorrentData
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
      * Started if status does not contain 'offline'.
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

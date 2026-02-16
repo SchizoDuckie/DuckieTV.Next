@@ -20,10 +20,15 @@ namespace App\DTOs\TorrentData;
 class UTorrentWebUIData extends TorrentData
 {
     public ?string $name = null;
+
     public ?string $infoHash = null;
+
     public ?int $progress = null;
+
     public ?int $status = null;
+
     public ?int $downloadSpeed = null;
+
     public ?string $download_dir = null;
 
     /**
@@ -99,8 +104,6 @@ class UTorrentWebUIData extends TorrentData
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
      * The torrent is started if the status is uneven (odd).
-     *
-     * @return bool
      */
     public function isStarted(): bool
     {

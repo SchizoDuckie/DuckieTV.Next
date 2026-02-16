@@ -149,7 +149,7 @@ return [
 
     /**
      * The queue workers that get auto-started on your application start.
-     * 
+     *
      * IMPORTANT: timeout must be >= the longest job's $timeout property.
      * RestoreShowJob has $timeout = 180, TraktUpdateJob has $timeout = 3600.
      * We set this to 300 as a reasonable compromise for the queue worker.

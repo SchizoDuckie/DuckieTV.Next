@@ -6,9 +6,9 @@ use App\Services\CalendarService;
 use App\Services\FavoritesService;
 use App\Services\SettingsService;
 use App\Services\TraktService;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             // Don't crash the app if nativephp connection isn't available yet
             // (e.g. during initial setup or artisan commands)
-            Log::debug('Could not configure nativephp database: ' . $e->getMessage());
+            Log::debug('Could not configure nativephp database: '.$e->getMessage());
         }
     }
 }

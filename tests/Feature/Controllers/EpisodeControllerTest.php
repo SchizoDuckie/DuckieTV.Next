@@ -19,11 +19,11 @@ class EpisodeControllerTest extends TestCase
             'episodename' => 'Leak Ep',
             'trakt_id' => 888,
             'firstaired' => now()->addDays(7)->getTimestampMs(), // Future
-            'leaked' => 0
+            'leaked' => 0,
         ]);
 
         $response = $this->patch(route('episodes.update', $episode->id), [
-            'action' => 'toggle_leaked'
+            'action' => 'toggle_leaked',
         ]);
 
         $response->assertRedirect();
@@ -31,9 +31,9 @@ class EpisodeControllerTest extends TestCase
 
         // Toggle back
         $this->patch(route('episodes.update', $episode->id), [
-            'action' => 'toggle_leaked'
+            'action' => 'toggle_leaked',
         ]);
-        
+
         $this->assertEquals(0, $episode->fresh()->leaked);
     }
 }

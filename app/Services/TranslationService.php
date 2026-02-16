@@ -14,8 +14,8 @@ class TranslationService
     public function getAvailableLocales(): array
     {
         $langPath = base_path('lang');
-        
-        if (!File::exists($langPath)) {
+
+        if (! File::exists($langPath)) {
             return ['en_US' => 'English (US)'];
         }
 
@@ -26,10 +26,10 @@ class TranslationService
             if ($file->getExtension() === 'json') {
                 $code = $file->getFilenameWithoutExtension();
                 // Use the code as the name, or try to read a "LOCALE" key if it exists in the JSON.
-                
+
                 $content = json_decode(File::get($file->getPathname()), true);
                 $name = $content['LOCALE'] ?? $code;
-                
+
                 $locales[$code] = $name;
             }
         }

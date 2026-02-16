@@ -23,7 +23,7 @@ it('skips when torrenting is disabled', function () {
     $settings = app(SettingsService::class);
     $settings->set('torrenting.enabled', false);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     // Should complete without error
@@ -35,7 +35,7 @@ it('skips when autodownload is disabled', function () {
     $settings->set('torrenting.enabled', true);
     $settings->set('torrenting.autodownload', false);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     expect(true)->toBeTrue();
@@ -74,7 +74,7 @@ it('processes episode candidates and skips downloaded', function () {
         'watched' => 0,
     ]);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     // Should complete without error (episode skipped because downloaded)
@@ -112,7 +112,7 @@ it('skips episodes hidden from calendar', function () {
         'watched' => 0,
     ]);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     // Episode should NOT have been downloaded (serie hidden from calendar)
@@ -153,7 +153,7 @@ it('skips specials when show-specials is disabled', function () {
         'watched' => 0,
     ]);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     // Special episode should NOT have been downloaded
@@ -166,7 +166,7 @@ it('updates lastrun timestamp after check', function () {
     $settings->set('torrenting.enabled', true);
     $settings->set('torrenting.autodownload', true);
 
-    $job = new AutoDownloadJob();
+    $job = new AutoDownloadJob;
     $job->handle($settings, app(FavoritesService::class));
 
     expect((int) $settings->get('autodownload.lastrun'))->toBeGreaterThan(0);

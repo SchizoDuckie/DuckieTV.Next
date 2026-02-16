@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Services\FavoritesService;
-use App\Services\TraktService;
 use App\Services\PosterService;
+use App\Services\TraktService;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
     protected TraktService $trakt;
+
     protected FavoritesService $favorites;
+
     protected PosterService $posters;
 
     public function __construct(TraktService $trakt, FavoritesService $favorites, PosterService $posters)
@@ -28,7 +30,7 @@ class SearchController extends Controller
     {
         $trending = $this->posters->getCached('trending');
 
-        if (!$trending) {
+        if (! $trending) {
             $trending = $this->loadTrending();
             if (empty($trending)) {
                 $trending = $this->trakt->trending();
@@ -58,7 +60,7 @@ class SearchController extends Controller
 
         $results = $this->posters->getCached($query);
 
-        if (!$results) {
+        if (! $results) {
             $results = $this->trakt->search($query);
             $results = $this->posters->enrich($results);
             $this->posters->cacheResults($query, $results);
@@ -86,7 +88,7 @@ class SearchController extends Controller
 
             return redirect()->route('calendar.index')->with('status', "Added {$serie->name} to favorites.");
         } catch (\Exception $e) {
-            return back()->with('error', "Failed to add show: " . $e->getMessage());
+            return back()->with('error', 'Failed to add show: '.$e->getMessage());
         }
     }
 
@@ -97,7 +99,7 @@ class SearchController extends Controller
     private function loadTrending(): array
     {
         $path = storage_path('app/trakt-trending-500.json');
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return [];
         }
 

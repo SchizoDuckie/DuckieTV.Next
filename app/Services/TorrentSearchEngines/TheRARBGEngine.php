@@ -17,7 +17,7 @@ class TheRARBGEngine extends GenericSearchEngine
             'mirror' => $settings->get('mirror.theRARBG', 'https://therarbg.to'),
             'includeBaseURL' => true,
             'endpoints' => [
-                'search' => '/get-posts/keywords:%s:order:%o/'
+                'search' => '/get-posts/keywords:%s:order:%o/',
             ],
             'selectors' => [
                 'resultContainer' => 'tr.list-entry',
@@ -25,18 +25,18 @@ class TheRARBGEngine extends GenericSearchEngine
                 'seeders' => ['td:nth-child(7)', 'innerText'],
                 'leechers' => ['td:nth-child(8)', 'innerText'],
                 'size' => ['td.sizeCell', 'innerText'],
-                'detailUrl' => ['a[href^="/post-detail/"]', 'href']
+                'detailUrl' => ['a[href^="/post-detail/"]', 'href'],
             ],
             'detailsSelectors' => [
                 'detailsContainer' => 'table.detailTable',
-                'magnetUrl' => ['a[href^="magnet:?"]', 'href']
+                'magnetUrl' => ['a[href^="magnet:?"]', 'href'],
             ],
             'orderby' => [
                 'age' => ['d' => '-a', 'a' => 'a'],
                 'seeders' => ['d' => '-se', 'a' => 'se'],
                 'leechers' => ['d' => '-le', 'a' => 'le'],
-                'size' => ['d' => '-s', 'a' => 's']
-            ]
+                'size' => ['d' => '-s', 'a' => 's'],
+            ],
         ]);
     }
 }

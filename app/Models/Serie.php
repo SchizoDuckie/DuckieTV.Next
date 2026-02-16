@@ -11,58 +11,57 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Ported from DuckieTV Angular CRUD.entities.js Serie entity.
  * Original table: "Series" with 52 fields and 21 schema migrations (versions 5-25).
  *
- * @property int         $id                    Primary key (was ID_Serie)
- * @property string|null $name                  Series title (max 250 chars)
- * @property string|null $banner                Banner image URL (max 1024 chars)
- * @property string|null $overview              Series description/synopsis
- * @property int|null    $tvdb_id               TheTVDB identifier
- * @property string|null $imdb_id               IMDB identifier (e.g. "tt0903747", max 20 chars)
- * @property int|null    $tvrage_id             TVRage identifier (legacy)
- * @property string|null $actors                Pipe-separated actor names (max 1024 chars)
- * @property string|null $airs_dayofweek        Day of week the show airs (e.g. "Monday", max 10 chars)
- * @property string|null $airs_time             Time the show airs (e.g. "21:00", max 15 chars)
- * @property string|null $timezone              Timezone for air schedule (max 30 chars)
- * @property string|null $contentrating         Content rating (e.g. "TV-MA", max 20 chars)
- * @property \Carbon\Carbon|null $firstaired    Date of first episode airing
- * @property string|null $genre                 Pipe-separated genres (e.g. "drama|thriller", max 50 chars)
- * @property string|null $country               Country of origin (max 50 chars)
- * @property string|null $language              Primary language (max 50 chars)
- * @property string|null $network               Broadcasting network (e.g. "AMC", max 50 chars)
- * @property int|null    $rating                Average rating
- * @property int|null    $ratingcount           Number of ratings
- * @property int|null    $runtime               Episode runtime in minutes
- * @property string|null $status                Show status: "continuing", "ended", etc. (max 50 chars)
- * @property \Carbon\Carbon|null $added         Date the series was added to favorites
- * @property string|null $addedby               How the series was added (max 50 chars)
- * @property string|null $fanart                Fanart image URL (max 150 chars), indexed
- * @property string|null $poster                Poster image URL (max 150 chars)
- * @property int|null    $lastupdated           Last updated timestamp (milliseconds)
- * @property int|null    $lastfetched           Last fetched from API timestamp (milliseconds)
- * @property int|null    $nextupdate            Next scheduled update timestamp (milliseconds)
- * @property bool        $displaycalendar       Whether to show this series on the calendar (default: true)
- * @property bool        $autoDownload          Whether auto-download is enabled for this series (default: true)
- * @property string|null $customSearchString    Custom search string override for torrent searches (max 150 chars)
- * @property bool        $watched               Whether all aired episodes are watched (default: false)
- * @property int         $notWatchedCount       Cached count of unwatched aired episodes (default: 0)
- * @property bool        $ignoreGlobalQuality   Ignore global quality settings for this series (default: false)
- * @property bool        $ignoreGlobalIncludes  Ignore global include keywords for this series (default: false)
- * @property bool        $ignoreGlobalExcludes  Ignore global exclude keywords for this series (default: false)
- * @property string|null $searchProvider        Override search provider for this series (max 20 chars)
- * @property bool        $ignoreHideSpecials    Show specials even if globally hidden (default: false)
- * @property int|null    $customSearchSizeMin   Minimum torrent size in MB for this series
- * @property int|null    $customSearchSizeMax   Maximum torrent size in MB for this series
- * @property int|null    $trakt_id              Trakt.tv identifier, UNIQUE indexed
- * @property string|null $dlPath                Custom download path for this series
- * @property int|null    $customDelay           Custom auto-download delay in hours
- * @property string|null $alias                 Alternative name for search (max 250 chars)
- * @property string|null $customFormat          Custom episode format (max 20 chars)
- * @property int|null    $tmdb_id               TheMovieDB identifier
- * @property string|null $customIncludes        Custom include keywords for torrent filtering (max 150 chars)
- * @property string|null $customExcludes        Custom exclude keywords for torrent filtering (max 150 chars)
- * @property int|null    $customSeeders         Minimum seeder count override for this series
+ * @property int $id Primary key (was ID_Serie)
+ * @property string|null $name Series title (max 250 chars)
+ * @property string|null $banner Banner image URL (max 1024 chars)
+ * @property string|null $overview Series description/synopsis
+ * @property int|null $tvdb_id TheTVDB identifier
+ * @property string|null $imdb_id IMDB identifier (e.g. "tt0903747", max 20 chars)
+ * @property int|null $tvrage_id TVRage identifier (legacy)
+ * @property string|null $actors Pipe-separated actor names (max 1024 chars)
+ * @property string|null $airs_dayofweek Day of week the show airs (e.g. "Monday", max 10 chars)
+ * @property string|null $airs_time Time the show airs (e.g. "21:00", max 15 chars)
+ * @property string|null $timezone Timezone for air schedule (max 30 chars)
+ * @property string|null $contentrating Content rating (e.g. "TV-MA", max 20 chars)
+ * @property \Carbon\Carbon|null $firstaired Date of first episode airing
+ * @property string|null $genre Pipe-separated genres (e.g. "drama|thriller", max 50 chars)
+ * @property string|null $country Country of origin (max 50 chars)
+ * @property string|null $language Primary language (max 50 chars)
+ * @property string|null $network Broadcasting network (e.g. "AMC", max 50 chars)
+ * @property int|null $rating Average rating
+ * @property int|null $ratingcount Number of ratings
+ * @property int|null $runtime Episode runtime in minutes
+ * @property string|null $status Show status: "continuing", "ended", etc. (max 50 chars)
+ * @property \Carbon\Carbon|null $added Date the series was added to favorites
+ * @property string|null $addedby How the series was added (max 50 chars)
+ * @property string|null $fanart Fanart image URL (max 150 chars), indexed
+ * @property string|null $poster Poster image URL (max 150 chars)
+ * @property int|null $lastupdated Last updated timestamp (milliseconds)
+ * @property int|null $lastfetched Last fetched from API timestamp (milliseconds)
+ * @property int|null $nextupdate Next scheduled update timestamp (milliseconds)
+ * @property bool $displaycalendar Whether to show this series on the calendar (default: true)
+ * @property bool $autoDownload Whether auto-download is enabled for this series (default: true)
+ * @property string|null $customSearchString Custom search string override for torrent searches (max 150 chars)
+ * @property bool $watched Whether all aired episodes are watched (default: false)
+ * @property int $notWatchedCount Cached count of unwatched aired episodes (default: 0)
+ * @property bool $ignoreGlobalQuality Ignore global quality settings for this series (default: false)
+ * @property bool $ignoreGlobalIncludes Ignore global include keywords for this series (default: false)
+ * @property bool $ignoreGlobalExcludes Ignore global exclude keywords for this series (default: false)
+ * @property string|null $searchProvider Override search provider for this series (max 20 chars)
+ * @property bool $ignoreHideSpecials Show specials even if globally hidden (default: false)
+ * @property int|null $customSearchSizeMin Minimum torrent size in MB for this series
+ * @property int|null $customSearchSizeMax Maximum torrent size in MB for this series
+ * @property int|null $trakt_id Trakt.tv identifier, UNIQUE indexed
+ * @property string|null $dlPath Custom download path for this series
+ * @property int|null $customDelay Custom auto-download delay in hours
+ * @property string|null $alias Alternative name for search (max 250 chars)
+ * @property string|null $customFormat Custom episode format (max 20 chars)
+ * @property int|null $tmdb_id TheMovieDB identifier
+ * @property string|null $customIncludes Custom include keywords for torrent filtering (max 150 chars)
+ * @property string|null $customExcludes Custom exclude keywords for torrent filtering (max 150 chars)
+ * @property int|null $customSeeders Minimum seeder count override for this series
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
- *
  * @property-read \Illuminate\Database\Eloquent\Collection<Episode> $episodes
  * @property-read \Illuminate\Database\Eloquent\Collection<Season>  $seasons
  */
@@ -161,6 +160,7 @@ class Serie extends Model
     public function getWatchedPercentage(): int
     {
         $total = $this->getTotalRunTime();
+
         return $total > 0 ? round(($this->getTotalWatchedTime() / $total) * 100) : 0;
     }
 
@@ -282,7 +282,7 @@ class Serie extends Model
      */
     public function toggleAutoDownload(): void
     {
-        $this->update(['autoDownload' => !$this->autoDownload]);
+        $this->update(['autoDownload' => ! $this->autoDownload]);
     }
 
     /**
@@ -291,14 +291,14 @@ class Serie extends Model
      */
     public function toggleCalendarDisplay(): void
     {
-        $this->update(['displaycalendar' => !$this->displaycalendar]);
+        $this->update(['displaycalendar' => ! $this->displaycalendar]);
     }
 
     /**
      * Mark all aired episodes as watched (and optionally as downloaded).
      * Ported from Serie.prototype.markSerieAsWatched().
      *
-     * @param bool $watchedDownloadedPaired When true, also marks episodes as downloaded
+     * @param  bool  $watchedDownloadedPaired  When true, also marks episodes as downloaded
      */
     public function markSerieAsWatched(bool $watchedDownloadedPaired = true): void
     {

@@ -3,7 +3,6 @@
 namespace App\Services\TorrentSearchEngines;
 
 use App\Services\SettingsService;
-use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * IsoHunt search engine implementation.
@@ -18,7 +17,7 @@ class IsoHuntEngine extends GenericSearchEngine
             'mirror' => $settings->get('mirror.IsoHunt2', 'https://isohunt.to'),
             'includeBaseURL' => true,
             'endpoints' => [
-                'search' => '/torrent/?ihq=%s&iht=0'
+                'search' => '/torrent/?ihq=%s&iht=0',
             ],
             'selectors' => [
                 'resultContainer' => 'tr[data-key="0"]',
@@ -26,12 +25,12 @@ class IsoHuntEngine extends GenericSearchEngine
                 'size' => ['td.size-row', 'innerText'],
                 'seeders' => ['td.sn', 'innerText'],
                 'leechers' => ['td.sn', 'innerText'],
-                'detailUrl' => ['td.title-row > a[href^="/torrent_details/"]', 'href']
+                'detailUrl' => ['td.title-row > a[href^="/torrent_details/"]', 'href'],
             ],
             'detailsSelectors' => [
                 'detailsContainer' => 'div[class="row mt"]',
-                'magnetUrl' => ['a:nth-of-type(2)', 'href']
-            ]
+                'magnetUrl' => ['a:nth-of-type(2)', 'href'],
+            ],
         ]);
     }
 
@@ -43,9 +42,9 @@ class IsoHuntEngine extends GenericSearchEngine
     protected function getPropertyForSelector(\Symfony\Component\DomCrawler\Crawler $node, ?array $propertyConfig): ?string
     {
         $value = parent::getPropertyForSelector($node, $propertyConfig);
-        
+
         if ($value && $propertyConfig && $propertyConfig[0] === 'a:nth-of-type(2)' && str_contains($value, 'mylink.cloud')) {
-             return urldecode(str_replace('https://mylink.cloud/?url=', '', $value));
+            return urldecode(str_replace('https://mylink.cloud/?url=', '', $value));
         }
 
         return $value;

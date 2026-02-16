@@ -2,17 +2,17 @@
 
 namespace App\Services\TorrentClients;
 
-use App\Services\SettingsService;
-use Illuminate\Support\Facades\Http;
-use Exception;
-use Symfony\Component\DomCrawler\Crawler;
 use App\DTOs\TorrentData\UTorrentWebUIData;
+use App\Services\SettingsService;
+use Exception;
+use Illuminate\Support\Facades\Http;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * uTorrent Web UI Client Implementation.
- * 
+ *
  * Handles communication with uTorrent via its Web UI token-based API.
- * 
+ *
  * @see uTorrentWebUI.js in DuckieTV-angular.
  * @see https://forum.utorrent.com/topic/21814-web-ui-api/
  */
@@ -44,14 +44,12 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Set up configuration mappings for uTorrent Web UI.
-     * 
-     * @return array
      */
     protected function getConfigMappings(): array
     {
         return [
-            'server'   => 'utorrentwebui.server',
-            'port'     => 'utorrentwebui.port',
+            'server' => 'utorrentwebui.server',
+            'port' => 'utorrentwebui.port',
             'username' => 'utorrentwebui.username',
             'password' => 'utorrentwebui.password',
             'use_auth' => 'utorrentwebui.use_auth',
@@ -60,21 +58,19 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Test connection and retrieve token.
-     * 
-     * @return bool
      */
     public function connect(): bool
     {
         try {
-            $url = $this->getBaseUrl() . '/gui/token.html';
-            
+            $url = $this->getBaseUrl().'/gui/token.html';
+
             $request = Http::asForm();
             if ($this->config['use_auth']) {
                 $request->withBasicAuth($this->config['username'], $this->config['password']);
             }
 
             $response = $request->get($url);
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return false;
             }
 
@@ -83,7 +79,7 @@ class UTorrentWebUIClient extends BaseTorrentClient
             $tokenNode = $crawler->filter('#token');
             if ($tokenNode->count() > 0) {
                 $this->token = $tokenNode->text();
-                
+
                 // Store cookie for subsequent requests if provided
                 if ($response->header('Set-Cookie')) {
                     if (preg_match('/GUID=([^;]+)/', $response->header('Set-Cookie'), $matches)) {
@@ -91,38 +87,39 @@ class UTorrentWebUIClient extends BaseTorrentClient
                     }
                 }
                 $this->connected = true;
+
                 return true;
             }
 
             $this->connected = false;
+
             return false;
         } catch (Exception $e) {
             $this->connected = false;
+
             return false;
         }
     }
 
     /**
      * Get list of torrents.
-     * 
-     * @return array
      */
     public function getTorrents(): array
     {
-        if (!$this->token && !$this->connect()) {
+        if (! $this->token && ! $this->connect()) {
             return [];
         }
 
         try {
             $response = $this->request('list=1');
-            if (!isset($response['torrents'])) {
+            if (! isset($response['torrents'])) {
                 return [];
             }
 
             return collect($response['torrents'])->map(fn ($torrent) => new UTorrentWebUIData([
                 'infoHash' => strtoupper($torrent[0]),
                 'name' => $torrent[2],
-                'progress' => (float)$torrent[4] / 10, // permille to percentage
+                'progress' => (float) $torrent[4] / 10, // permille to percentage
                 'status' => $torrent[21],
                 'download_speed' => $torrent[9],
             ]))->all();
@@ -137,7 +134,8 @@ class UTorrentWebUIClient extends BaseTorrentClient
     public function startTorrent(string $infoHash): bool
     {
         try {
-            $this->request('action=start&hash=' . $infoHash);
+            $this->request('action=start&hash='.$infoHash);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -150,7 +148,8 @@ class UTorrentWebUIClient extends BaseTorrentClient
     public function stopTorrent(string $infoHash): bool
     {
         try {
-            $this->request('action=stop&hash=' . $infoHash);
+            $this->request('action=stop&hash='.$infoHash);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -163,7 +162,8 @@ class UTorrentWebUIClient extends BaseTorrentClient
     public function pauseTorrent(string $infoHash): bool
     {
         try {
-            $this->request('action=pause&hash=' . $infoHash);
+            $this->request('action=pause&hash='.$infoHash);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -178,7 +178,8 @@ class UTorrentWebUIClient extends BaseTorrentClient
         try {
             // action=remove removes from list, action=removedata removes from disk too.
             // Matching DuckieTV-angular preference usually being remove (keeping data).
-            $this->request('action=remove&hash=' . $infoHash);
+            $this->request('action=remove&hash='.$infoHash);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -191,7 +192,8 @@ class UTorrentWebUIClient extends BaseTorrentClient
     public function getTorrentFiles(string $infoHash): array
     {
         try {
-            $response = $this->request('action=getfiles&hash=' . $infoHash);
+            $response = $this->request('action=getfiles&hash='.$infoHash);
+
             return $response['files'] ?? [];
         } catch (Exception $e) {
             return [];
@@ -206,6 +208,7 @@ class UTorrentWebUIClient extends BaseTorrentClient
         try {
             $response = $this->request('list=1'); // uTorrent doesn't have a good "single torrent info" endpoint
             $torrent = collect($response['torrents'] ?? [])->first(fn ($t) => strtoupper($t[0]) === strtoupper($infoHash));
+
             return $torrent && $torrent[1] % 2 === 1;
         } catch (Exception $e) {
             return false;
@@ -214,28 +217,24 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Add a magnet link.
-     * 
-     * @param string $magnet
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addMagnet(string $magnet, ?string $dlPath = null, ?string $label = null): bool
     {
         // uTorrent has a 1K limit on magnet strings in some versions
         if (strlen($magnet) > 1024) {
-             // Basic trimming of trackers if too long (rough approximation)
-             $parts = explode('&tr=', $magnet);
-             $magnet = $parts[0];
-             for ($i = 1; $i < count($parts); $i++) {
-                 if (strlen($magnet . '&tr=' . $parts[$i]) < 1024) {
-                     $magnet .= '&tr=' . $parts[$i];
-                 }
-             }
+            // Basic trimming of trackers if too long (rough approximation)
+            $parts = explode('&tr=', $magnet);
+            $magnet = $parts[0];
+            for ($i = 1; $i < count($parts); $i++) {
+                if (strlen($magnet.'&tr='.$parts[$i]) < 1024) {
+                    $magnet .= '&tr='.$parts[$i];
+                }
+            }
         }
 
         try {
-            $this->request('action=add-url&s=' . urlencode($magnet));
+            $this->request('action=add-url&s='.urlencode($magnet));
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -244,13 +243,6 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Add a torrent by its URL.
-     * 
-     * @param string $url
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUrl(string $url, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
@@ -259,23 +251,16 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Add a torrent by uploading its raw binary data.
-     * 
-     * @param string $data
-     * @param string $infoHash
-     * @param string $releaseName
-     * @param string|null $dlPath
-     * @param string|null $label
-     * @return bool
      */
     public function addTorrentByUpload(string $data, string $infoHash, string $releaseName, ?string $dlPath = null, ?string $label = null): bool
     {
-        if (!$this->token && !$this->connect()) {
+        if (! $this->token && ! $this->connect()) {
             return false;
         }
 
         try {
-            $url = $this->getBaseUrl() . '/gui/?token=' . $this->token . '&action=add-file';
-            
+            $url = $this->getBaseUrl().'/gui/?token='.$this->token.'&action=add-file';
+
             $request = Http::asMultipart();
             if ($this->config['use_auth']) {
                 $request->withBasicAuth($this->config['username'], $this->config['password']);
@@ -285,7 +270,7 @@ class UTorrentWebUIClient extends BaseTorrentClient
             }
 
             /** @var \Illuminate\Http\Client\Response $response */
-            $response = $request->attach('torrent_file', $data, $releaseName . '.torrent')
+            $response = $request->attach('torrent_file', $data, $releaseName.'.torrent')
                 ->post($url);
 
             return $response->successful();
@@ -296,14 +281,12 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Perform a request to the uTorrent API.
-     * 
-     * @param string $query
-     * @return array
+     *
      * @throws Exception
      */
     protected function request(string $query): array
     {
-        $url = $this->getBaseUrl() . '/gui/?token=' . $this->token . '&' . $query;
+        $url = $this->getBaseUrl().'/gui/?token='.$this->token.'&'.$query;
 
         $request = Http::asForm();
         if ($this->config['use_auth']) {
@@ -316,14 +299,15 @@ class UTorrentWebUIClient extends BaseTorrentClient
         /** @var \Illuminate\Http\Client\Response $response */
         $response = $request->get($url);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             // If 400/401, token might have expired
             if ($response->status() === 400 || $response->status() === 401) {
                 $this->connect();
+
                 // retry once
                 return $this->request($query);
             }
-            throw new Exception("uTorrent API error: " . $response->status());
+            throw new Exception('uTorrent API error: '.$response->status());
         }
 
         return $response->json();
@@ -331,11 +315,9 @@ class UTorrentWebUIClient extends BaseTorrentClient
 
     /**
      * Get the base URL.
-     * 
-     * @return string
      */
     protected function getBaseUrl(): string
     {
-        return rtrim($this->config['server'], '/') . ':' . $this->config['port'];
+        return rtrim($this->config['server'], '/').':'.$this->config['port'];
     }
 }

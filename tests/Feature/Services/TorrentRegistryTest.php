@@ -2,26 +2,26 @@
 
 namespace Tests\Feature\Services;
 
-use App\Services\TorrentSearchService;
-use App\Services\TorrentClientService;
-use App\Services\TorrentSearchEngines\ThePirateBayEngine;
-use App\Services\TorrentSearchEngines\OneThreeThreeSevenXEngine;
-use App\Services\TorrentSearchEngines\LimeTorrentsEngine;
-use App\Services\TorrentSearchEngines\NyaaEngine;
-use App\Services\TorrentSearchEngines\TheRARBGEngine;
-use App\Services\TorrentSearchEngines\IsoHuntEngine;
-use App\Services\TorrentSearchEngines\IdopeEngine;
-use App\Services\TorrentSearchEngines\KATEngine;
-use App\Services\TorrentSearchEngines\ShowRSSEngine;
-use App\Services\TorrentSearchEngines\KnabenEngine;
-use App\Services\TorrentSearchEngines\PiratesParadiseEngine;
-use App\Services\TorrentSearchEngines\TorrentDownloadsEngine;
-use App\Services\TorrentSearchEngines\UindexEngine;
-use App\Services\TorrentSearchEngines\ETagEngine;
-use App\Services\TorrentSearchEngines\FileMoodEngine;
 use App\Services\TorrentClients\QBittorrentClient;
 use App\Services\TorrentClients\TransmissionClient;
 use App\Services\TorrentClients\UTorrentClient;
+use App\Services\TorrentClientService;
+use App\Services\TorrentSearchEngines\ETagEngine;
+use App\Services\TorrentSearchEngines\FileMoodEngine;
+use App\Services\TorrentSearchEngines\IdopeEngine;
+use App\Services\TorrentSearchEngines\IsoHuntEngine;
+use App\Services\TorrentSearchEngines\KATEngine;
+use App\Services\TorrentSearchEngines\KnabenEngine;
+use App\Services\TorrentSearchEngines\LimeTorrentsEngine;
+use App\Services\TorrentSearchEngines\NyaaEngine;
+use App\Services\TorrentSearchEngines\OneThreeThreeSevenXEngine;
+use App\Services\TorrentSearchEngines\PiratesParadiseEngine;
+use App\Services\TorrentSearchEngines\ShowRSSEngine;
+use App\Services\TorrentSearchEngines\ThePirateBayEngine;
+use App\Services\TorrentSearchEngines\TheRARBGEngine;
+use App\Services\TorrentSearchEngines\TorrentDownloadsEngine;
+use App\Services\TorrentSearchEngines\UindexEngine;
+use App\Services\TorrentSearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

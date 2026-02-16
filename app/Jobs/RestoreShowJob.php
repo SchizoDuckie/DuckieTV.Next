@@ -24,6 +24,7 @@ class RestoreShowJob implements ShouldQueue
      * multiple jobs are being processed and the queue worker is busy.
      */
     public $tries = 3;
+
     public $backoff = [5, 15]; // seconds between retries
 
     /**
@@ -50,22 +51,24 @@ class RestoreShowJob implements ShouldQueue
                 // Actually, updating the main cache key directly is risky with race conditions if we blast it.
                 // But since we are running potentially in parallel (if workers > 1), we should be careful.
                 // However, for now, let's assume one worker or acceptable race for logs.
-                
+
                 // Fetch current state
                 // We utilize the cache key 'backup_progress' as the source of truth for the frontend
-                
+
                 $data = Cache::get('backup_progress', ['logs' => []]);
-                
+
                 // Calculate Global Progress based on Batch
                 // The batch progress is the most accurate global indicator
                 $batchProgress = $this->batch()->progress();
                 $data['percent'] = $batchProgress;
-                
+
                 // Append Logs
                 $msgText = is_array($message) ? ($message['message'] ?? null) : $message;
                 if ($msgText) {
-                    $data['logs'][] = date('H:i:s') . ' - ' . $msgText;
-                    if (count($data['logs']) > 500) array_shift($data['logs']);
+                    $data['logs'][] = date('H:i:s').' - '.$msgText;
+                    if (count($data['logs']) > 500) {
+                        array_shift($data['logs']);
+                    }
                 }
 
                 // Show Specific Progress (Ephemeral)
@@ -75,9 +78,9 @@ class RestoreShowJob implements ShouldQueue
                 } else {
                     $data['message'] = $message;
                 }
-                
+
                 $data['status'] = 'running';
-                
+
                 Cache::put('backup_progress', $data);
             });
 
@@ -85,16 +88,16 @@ class RestoreShowJob implements ShouldQueue
             Log::info("RestoreShowJob hit Trakt rate limit for ID {$this->seriesId}, releasing back to queue for {$e->retryAfter}s");
             $this->release($e->retryAfter);
         } catch (\Throwable $e) {
-            Log::error("RestoreShowJob failed for ID {$this->seriesId}: " . $e->getMessage());
-            
+            Log::error("RestoreShowJob failed for ID {$this->seriesId}: ".$e->getMessage());
+
             // Record failure in global state
             $data = Cache::get('backup_progress', ['logs' => [], 'failed_series' => []]);
             $data['failed_series'][] = [
                 'id' => $this->seriesId,
                 'error' => $e->getMessage(),
-                'time' => date('H:i:s')
+                'time' => date('H:i:s'),
             ];
-            $data['logs'][] = date('H:i:s') . " - ERROR: Failed to restore series ID {$this->seriesId}: " . $e->getMessage();
+            $data['logs'][] = date('H:i:s')." - ERROR: Failed to restore series ID {$this->seriesId}: ".$e->getMessage();
             Cache::put('backup_progress', $data);
 
             throw $e;

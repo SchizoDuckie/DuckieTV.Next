@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Log;
 class TMDBService
 {
     private const API_URL = 'https://api.themoviedb.org/3';
+
     private const API_KEY = '79d916a2d2e91ff2714649d63f3a5cc5';
+
     private const IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 
     /**
@@ -30,19 +32,20 @@ class TMDBService
      * Ported from FanartService.js updateTmdbImagesForShow() and
      * TMDBService.js getShow().
      *
-     * @param int $tmdbId The TMDB show ID
+     * @param  int  $tmdbId  The TMDB show ID
      * @return array{poster: string|null, fanart: string|null}
      */
     public function getShowImages(int $tmdbId): array
     {
         try {
-            $response = Http::timeout(15)->get(self::API_URL . "/tv/{$tmdbId}", [
+            $response = Http::timeout(15)->get(self::API_URL."/tv/{$tmdbId}", [
                 'api_key' => self::API_KEY,
                 'language' => 'en-US',
             ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::warning("TMDB: Failed to fetch images for show {$tmdbId}: HTTP {$response->status()}");
+
                 return ['poster' => null, 'fanart' => null];
             }
 
@@ -54,6 +57,7 @@ class TMDBService
             ];
         } catch (\Exception $e) {
             Log::warning("TMDB: Exception fetching images for show {$tmdbId}: {$e->getMessage()}");
+
             return ['poster' => null, 'fanart' => null];
         }
     }
@@ -63,16 +67,16 @@ class TMDBService
      *
      * Ported from TMDBService.js getImageUrl().
      *
-     * @param string|null $path Image path from TMDB API (e.g. "/zzWGRw277MNoCs3zhyGiGmTWFZHm.jpg")
-     * @param string      $size Image size (w500, original, etc.)
+     * @param  string|null  $path  Image path from TMDB API (e.g. "/zzWGRw277MNoCs3zhyGiGmTWFZHm.jpg")
+     * @param  string  $size  Image size (w500, original, etc.)
      * @return string|null Full image URL or null if path is empty
      */
     public function getImageUrl(?string $path, string $size = 'w500'): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
-        return self::IMAGE_BASE . $size . $path;
+        return self::IMAGE_BASE.$size.$path;
     }
 }

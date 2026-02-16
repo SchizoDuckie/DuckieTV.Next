@@ -18,9 +18,9 @@ class SettingsControllerTest extends TestCase
         Bus::fake();
 
         $file = UploadedFile::fake()->createWithContent('backup.json', '{}');
-        
+
         $response = $this->postJson(route('settings.restore'), [
-            'backup_file' => $file
+            'backup_file' => $file,
         ]);
 
         $response->assertStatus(200)

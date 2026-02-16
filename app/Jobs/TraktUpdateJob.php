@@ -88,6 +88,7 @@ class TraktUpdateJob implements ShouldQueue
         // Check if enough time has passed
         if ($lastUpdated > 0 && ($lastUpdated + ($period * 3600 * 1000)) > $nowMs) {
             Log::info("TraktUpdate: Skipping, already done within the last {$period} hour(s).");
+
             return;
         }
 
@@ -155,6 +156,7 @@ class TraktUpdateJob implements ShouldQueue
         // Update trending cache once per day (24 hours)
         if ($lastTrendingUpdate > 0 && ($lastTrendingUpdate + (24 * 3600 * 1000)) > $nowMs) {
             Log::info('TraktUpdate: Skipping trending update, done within last 24 hours.');
+
             return;
         }
 
@@ -174,6 +176,7 @@ class TraktUpdateJob implements ShouldQueue
                     $serie['homepage'],
                     $serie['slug_id']
                 );
+
                 return $serie;
             }, $trendingData);
 
@@ -182,7 +185,7 @@ class TraktUpdateJob implements ShouldQueue
 
             Log::info('TraktUpdate: Trending cache updated.');
         } catch (\Throwable $e) {
-            Log::error('TraktUpdate: Failed to update trending cache: ' . $e->getMessage());
+            Log::error('TraktUpdate: Failed to update trending cache: '.$e->getMessage());
         }
     }
 }

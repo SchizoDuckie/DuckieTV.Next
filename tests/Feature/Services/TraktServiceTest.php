@@ -260,10 +260,9 @@ it('throws RateLimitException on 429 rate limit', function () {
     $this->settings->set('trakttv.token', 'test_token');
 
     Http::fake([
-        'api.trakt.tv/*' => Http::response('Rate limited', 429, ['Retry-After' => '0'])
+        'api.trakt.tv/*' => Http::response('Rate limited', 429, ['Retry-After' => '0']),
     ]);
 
-    expect(fn() => $this->trakt->search('Breaking Bad'))
+    expect(fn () => $this->trakt->search('Breaking Bad'))
         ->toThrow(\App\Exceptions\RateLimitException::class);
 });
-

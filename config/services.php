@@ -43,6 +43,4 @@ return [
         'api_endpoint' => 'https://api.trakt.tv/',
     ],
 
-
 ];
-

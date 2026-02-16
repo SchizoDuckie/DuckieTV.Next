@@ -36,12 +36,12 @@ class CalendarCommand extends Command
     public function handle()
     {
         $date = $this->argument('date') ? Carbon::parse($this->argument('date')) : now();
-        
+
         // Show current week by default
         $start = $date->copy()->startOfWeek(Carbon::MONDAY);
         $end = $date->copy()->endOfWeek(Carbon::SUNDAY);
 
-        $this->header("Calendar for " . $start->format('M d') . " - " . $end->format('M d, Y'));
+        $this->header('Calendar for '.$start->format('M d').' - '.$end->format('M d, Y'));
 
         $events = $this->calendar->getEventsForDateRange($start, $end);
 
@@ -52,18 +52,21 @@ class CalendarCommand extends Command
             $this->line("<fg=yellow;options=bold>{$day->format('l, M j')}</>");
 
             if (empty($dayEvents)) {
-                $this->line("  <fg=gray>No episodes airing today.</>");
+                $this->line('  <fg=gray>No episodes airing today.</>');
             } else {
                 foreach ($dayEvents as $event) {
                     $ep = $event['episode'];
                     $serie = $event['serie'];
-                    
+
                     $status = '';
-                    if ($ep->watched) $status = ' <fg=green>[WATCHED]</>';
-                    elseif ($ep->downloaded) $status = ' <fg=blue>[DL]</>';
+                    if ($ep->watched) {
+                        $status = ' <fg=green>[WATCHED]</>';
+                    } elseif ($ep->downloaded) {
+                        $status = ' <fg=blue>[DL]</>';
+                    }
 
                     $this->line(sprintf(
-                        "  <fg=cyan>%s</> - <fg=white>%s</> (%s)%s",
+                        '  <fg=cyan>%s</> - <fg=white>%s</> (%s)%s',
                         $ep->getAirTime(),
                         $serie->name,
                         $ep->formatted_episode,
@@ -71,7 +74,7 @@ class CalendarCommand extends Command
                     ));
                 }
             }
-            $this->line("");
+            $this->line('');
         }
 
         return 0;
@@ -79,8 +82,8 @@ class CalendarCommand extends Command
 
     protected function header($text)
     {
-        $this->line("");
-        $this->line("<bg=blue;fg=white;options=bold> " . str_pad($text, 50) . " </>");
-        $this->line("");
+        $this->line('');
+        $this->line('<bg=blue;fg=white;options=bold> '.str_pad($text, 50).' </>');
+        $this->line('');
     }
 }

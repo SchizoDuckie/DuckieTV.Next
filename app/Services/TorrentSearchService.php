@@ -3,15 +3,14 @@
 namespace App\Services;
 
 use App\Services\TorrentSearchEngines\SearchEngineInterface;
-use App\Services\TorrentSearchEngines\GenericSearchEngine;
 use Exception;
 
 /**
  * Abstraction layer for the different torrent search engines that DuckieTV supports.
- * 
- * Search engines register themselves with this service. This service provides 
+ *
+ * Search engines register themselves with this service. This service provides
  * a central point for dispatching search queries to the appropriate engine.
- * 
+ *
  * @see TorrentSearchEngines.js in DuckieTV-angular for original implementation.
  */
 class TorrentSearchService
@@ -22,12 +21,10 @@ class TorrentSearchService
     /** @var string|null The name of the default search engine */
     protected ?string $defaultEngineName = null;
 
-    /** @var SettingsService */
     protected SettingsService $settings;
 
     /**
-     * @param SettingsService $settings
-     * @param iterable<SearchEngineInterface> $engines
+     * @param  iterable<SearchEngineInterface>  $engines
      */
     public function __construct(SettingsService $settings, iterable $engines = [])
     {
@@ -40,10 +37,9 @@ class TorrentSearchService
 
     /**
      * Register a search engine instance.
-     * 
-     * @param string $name Unique name for the engine (e.g., '1337x')
-     * @param SearchEngineInterface $engine The engine implementation
-     * @return void
+     *
+     * @param  string  $name  Unique name for the engine (e.g., '1337x')
+     * @param  SearchEngineInterface  $engine  The engine implementation
      */
     public function registerSearchEngine(string $name, SearchEngineInterface $engine): void
     {
@@ -53,7 +49,7 @@ class TorrentSearchService
 
     /**
      * Get all registered search engine instances.
-     * 
+     *
      * @return array<string, SearchEngineInterface>
      */
     public function getSearchEngines(): array
@@ -63,9 +59,7 @@ class TorrentSearchService
 
     /**
      * Get a search engine by name, falling back to the default if not found.
-     * 
-     * @param string $name
-     * @return SearchEngineInterface
+     *
      * @throws Exception if neither the name nor the default engine is available
      */
     public function getSearchEngine(string $name): SearchEngineInterface
@@ -83,8 +77,7 @@ class TorrentSearchService
 
     /**
      * Get the currently configured default search engine.
-     * 
-     * @return SearchEngineInterface
+     *
      * @throws Exception if no default engine is configured or available
      */
     public function getDefaultEngine(): SearchEngineInterface
@@ -94,23 +87,21 @@ class TorrentSearchService
 
     /**
      * Perform a search across a specific engine or the default one.
-     * 
-     * @param string $query The search query
-     * @param string|null $engineName Optional override for the engine to use
-     * @param string|null $sortBy Optional sorting criteria
+     *
+     * @param  string  $query  The search query
+     * @param  string|null  $engineName  Optional override for the engine to use
+     * @param  string|null  $sortBy  Optional sorting criteria
      * @return array Array of torrent results
      */
     public function search(string $query, ?string $engineName = null, ?string $sortBy = null): array
     {
         $engine = $this->getSearchEngine($engineName ?? $this->defaultEngineName);
+
         return $engine->search($query, $sortBy);
     }
 
     /**
      * Set the default search engine name.
-     * 
-     * @param string $name
-     * @return void
      */
     public function setDefaultEngine(string $name): void
     {

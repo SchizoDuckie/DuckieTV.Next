@@ -35,7 +35,7 @@ class TorrentClientPresenter
      */
     public function getIcon(): string
     {
-        return $this->getSlug() . '-small.png';
+        return $this->getSlug().'-small.png';
     }
 
     /**

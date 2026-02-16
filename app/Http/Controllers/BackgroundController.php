@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\FavoritesService;
-use Illuminate\Http\Request;
 
 class BackgroundController extends Controller
 {
@@ -22,7 +21,7 @@ class BackgroundController extends Controller
     {
         $serie = $this->favorites->getRandomBackground();
 
-        if (!$serie) {
+        if (! $serie) {
             return response()->json(['error' => 'No favorites with fanart found'], 404);
         }
 
@@ -30,7 +29,7 @@ class BackgroundController extends Controller
             'id' => $serie->id,
             'name' => $serie->name,
             'fanart' => $serie->fanart,
-            'year' => $serie->firstaired->year
+            'year' => $serie->firstaired->year,
         ]);
     }
 }

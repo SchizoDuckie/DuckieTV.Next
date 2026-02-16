@@ -26,7 +26,7 @@ it('skips update when recently run', function () {
 
     Http::fake();
 
-    $job = new TraktUpdateJob();
+    $job = new TraktUpdateJob;
     $job->handle(
         app(TraktService::class),
         app(FavoritesService::class),
@@ -83,7 +83,7 @@ it('updates a favorite show when trakt has newer data', function () {
         ]),
     ]);
 
-    $job = new TraktUpdateJob();
+    $job = new TraktUpdateJob;
     $job->handle(
         app(TraktService::class),
         app(FavoritesService::class),
@@ -119,7 +119,7 @@ it('skips shows that havent been updated on trakt', function () {
         ]),
     ]);
 
-    $job = new TraktUpdateJob();
+    $job = new TraktUpdateJob;
     $job->handle(
         app(TraktService::class),
         app(FavoritesService::class),

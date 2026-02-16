@@ -91,7 +91,7 @@ class CalendarController extends Controller
             'mode' => 'week',
             'events' => $events,
             'currentDate' => $date,
-            'title' => $start->format('M d') . ' – ' . $end->format('M d, Y'),
+            'title' => $start->format('M d').' – '.$end->format('M d, Y'),
             'start' => $start,
             'end' => $end,
         ]);

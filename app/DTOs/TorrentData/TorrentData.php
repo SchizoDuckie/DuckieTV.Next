@@ -46,7 +46,7 @@ abstract class TorrentData
     public function update(array $data): self
     {
         foreach ($data as $key => $value) {
-            if (!in_array($key, $this->fillable, true)) {
+            if (! in_array($key, $this->fillable, true)) {
                 continue;
             }
 
@@ -58,6 +58,7 @@ abstract class TorrentData
 
             $this->{$key} = $this->castValue($value, $type);
         }
+
         return $this;
     }
 
@@ -66,7 +67,7 @@ abstract class TorrentData
      */
     private function castValue(mixed $value, ?\ReflectionType $type): mixed
     {
-        if ($value === null || $type === null || !$type instanceof \ReflectionNamedType) {
+        if ($value === null || $type === null || ! $type instanceof \ReflectionNamedType) {
             return $value;
         }
 
@@ -117,8 +118,6 @@ abstract class TorrentData
 
     /**
      * Send isStarted query to the torrent client implementation for this torrent.
-     *
-     * @return bool
      */
     abstract public function isStarted(): bool;
 
@@ -134,7 +133,8 @@ abstract class TorrentData
 
     public ?string $infoHash = null;
 
-    public function getInfoHash() {
+    public function getInfoHash()
+    {
         return $this->infoHash;
     }
 }
