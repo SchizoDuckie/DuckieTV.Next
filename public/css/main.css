@@ -1064,6 +1064,15 @@ body.sidepanelActive {
   width: calc(100% - 800px);
 }
 
+.sidepanelActive .sidepanel.wide {
+    width: 840px;
+}
+
+.sidepanelActive .sidepanel.wide + series-list>div,
+.sidepanelActive .sidepanel.wide ~ series-list>div {
+    width: calc(100% - 840px);
+}
+
 series-list .tools {
   width: 100%;
   padding: 22px 60px 22px 85px;

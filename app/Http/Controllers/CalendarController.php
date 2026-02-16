@@ -28,6 +28,7 @@ class CalendarController extends Controller
         $mode = $request->get('mode', 'month');
 
         return match ($mode) {
+            'decade' => $this->decadeView($date),
             'year' => $this->yearView($date),
             'week' => $this->weekView($date),
             default => $this->monthView($date),
@@ -35,9 +36,33 @@ class CalendarController extends Controller
     }
 
     /**
+     * Decade overview: 12 years (start - 1 to start + 10).
+     * Clicking a year drills down to year view.
+     */
+    private function decadeView(Carbon $date)
+    {
+        $year = $date->year;
+        // Calculate start of decade (e.g. 2020 for 2026)
+        $startYear = floor($year / 10) * 10 - 1; 
+        $endYear = $startYear + 11;
+
+        $years = $this->calendar->getEpisodeCountsByYear($startYear, $endYear);
+
+        return view('calendar.index', [
+            'mode' => 'decade',
+            'years' => $years,
+            'currentDate' => $date, // Keep the specific date for context
+            'startYear' => $startYear,
+            'endYear' => $endYear,
+            'title' => $startYear . '-' . $endYear,
+        ]);
+    }
+
+    /**
      * Year overview: 12 month cells with episode counts.
      * Clicking a month drills down to month view.
      * Prev/next navigates between years.
+     * Clicking title drills up to decade view.
      */
     private function yearView(Carbon $date)
     {
@@ -117,5 +142,17 @@ class CalendarController extends Controller
         $this->calendar->markDayDownloaded($date);
 
         return back()->with('status', "Marked all episodes on {$date->toDateString()} as downloaded.");
+    }
+
+    /**
+     * Toggle between calendar and todo view modes.
+     */
+    public function toggleViewMode(Request $request)
+    {
+        $currentMode = session('viewmode', 'calendar');
+        $newMode = ($currentMode === 'calendar') ? 'todo' : 'calendar';
+        session(['viewmode' => $newMode]);
+
+        return back()->with('status', "Switched to " . ucfirst($newMode) . " view.");
     }
 }

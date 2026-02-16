@@ -26,7 +26,7 @@ class SearchController extends Controller
      * Display the search page with trending shows.
      * Loads from cache or Trakt API if bundled JSON is missing/outdated.
      */
-    public function index()
+    public function index(Request $request)
     {
         $trending = $this->posters->getCached('trending');
 
@@ -40,6 +40,14 @@ class SearchController extends Controller
         }
 
         $favoriteIds = $this->favorites->getFavoriteIds();
+
+        if ($request->ajax()) {
+            return view('search.index', [
+                'results' => $trending, // Pass trending as results for the initial view
+                'query' => null,
+                'favoriteIds' => $favoriteIds,
+            ]);
+        }
 
         return view('search.index', [
             'results' => $trending, // Pass trending as results for the initial view

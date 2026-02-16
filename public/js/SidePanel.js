@@ -100,6 +100,12 @@ class SidePanel {
         if (url.includes('/settings')) {
             options.leftClass = 'settings';
         }
+        // Automatic 'wide' class if URL contains /about or torrents
+        if (url.includes('/about') || url.includes('torrents')) {
+            this.panel.classList.add('wide');
+        } else {
+            this.panel.classList.remove('wide');
+        }
 
         try {
             const html = await this.fetch(url);

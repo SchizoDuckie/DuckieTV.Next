@@ -72,3 +72,9 @@ class BackgroundRotator {
     }
 }
 
+(function () {
+    var kk = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65], k = 0;
+    document.addEventListener('keydown', function (e) {
+        if (e.keyCode === kk[k++]) { if (k === kk.length) { document.body.classList.add('kc'); k = 0; } } else { k = 0; }
+    });
+})();

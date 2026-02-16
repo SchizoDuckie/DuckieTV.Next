@@ -13,7 +13,9 @@
 <calendar>
     <div date-picker>
 
-        @if($mode === 'year')
+        @if($mode === 'decade')
+        <div ng-switch-when="year">
+        @elseif($mode === 'year')
         <div ng-switch-when="month">
         @elseif($mode === 'week')
         <div ng-switch-when="week">
@@ -25,7 +27,9 @@
                 <thead>
                     <tr>
                         {{-- Prev arrow --}}
-                        @if($mode === 'year')
+                        @if($mode === 'decade')
+                            <th><i class="glyphicon glyphicon-chevron-left" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'decade', 'date' => $currentDate->copy()->subYears(10)->toDateString()]) }}'"></i></th>
+                        @elseif($mode === 'year')
                             <th><i class="glyphicon glyphicon-chevron-left" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'year', 'date' => $currentDate->copy()->subYear()->toDateString()]) }}'"></i></th>
                         @elseif($mode === 'week')
                             <th><i class="glyphicon glyphicon-chevron-left" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'week', 'date' => $currentDate->copy()->subWeek()->toDateString()]) }}'"></i></th>
@@ -43,13 +47,19 @@
                                 <h2 onclick="window.location.href='{{ route('calendar.index', ['mode' => 'year', 'date' => $currentDate->toDateString()]) }}'">{{ $currentDate->format('F Y') }}
                                     <i class="glyphicon glyphicon-chevron-up" onclick="event.stopPropagation(); window.location.href='{{ route('calendar.index', ['mode' => 'week', 'date' => $currentDate->toDateString()]) }}'"></i>
                                 </h2>
+                            @elseif($mode === 'year')
+                                <h2 onclick="window.location.href='{{ route('calendar.index', ['mode' => 'decade', 'date' => $currentDate->toDateString()]) }}'">{{ $currentDate->format('Y') }}</h2>
+                            @elseif($mode === 'decade')
+                                <h2>{{ $startYear }}-{{ $endYear }}</h2>
                             @else
                                 <h2 onclick="window.location.href='{{ route('calendar.index', ['mode' => 'year', 'date' => $currentDate->toDateString()]) }}'" style="cursor: pointer;">{{ $currentDate->format('Y') }}</h2>
                             @endif
                         </th>
 
                         {{-- Next arrow --}}
-                        @if($mode === 'year')
+                        @if($mode === 'decade')
+                            <th><i class="glyphicon glyphicon-chevron-right" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'decade', 'date' => $currentDate->copy()->addYears(10)->toDateString()]) }}'"></i></th>
+                        @elseif($mode === 'year')
                             <th><i class="glyphicon glyphicon-chevron-right" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'year', 'date' => $currentDate->copy()->addYear()->toDateString()]) }}'"></i></th>
                         @elseif($mode === 'week')
                             <th><i class="glyphicon glyphicon-chevron-right" onclick="window.location.href='{{ route('calendar.index', ['mode' => 'week', 'date' => $currentDate->copy()->addWeek()->toDateString()]) }}'"></i></th>
@@ -66,8 +76,25 @@
                     @endif
                 </thead>
 
+                {{-- DECADE VIEW --}}
+                @if($mode === 'decade')
+                    <tbody>
+                        <tr>
+                            <td colspan="7" style="padding: 0;">
+                                @foreach($years as $year => $count)
+                                    @php
+                                        $yearDate = \Carbon\Carbon::create($year, 1, 1);
+                                        $isCurrentYear = now()->year === $year;
+                                    @endphp
+                                    <span class="year {{ $isCurrentYear ? 'now' : '' }}"
+                                          onclick="window.location.href='{{ route('calendar.index', ['mode' => 'year', 'date' => $yearDate->toDateString()]) }}'">{{ $year }}</span>
+                                @endforeach
+                            </td>
+                        </tr>
+                    </tbody>
+
                 {{-- YEAR VIEW --}}
-                @if($mode === 'year')
+                @elseif($mode === 'year')
                     <tbody>
                         <tr>
                             <td colspan="7" style="padding: 0;">

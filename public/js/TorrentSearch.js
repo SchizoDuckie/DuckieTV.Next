@@ -36,7 +36,8 @@ class TorrentSearch {
             const config = {
                 searchRoute: root.getAttribute('data-search-route'),
                 detailsRoute: root.getAttribute('data-details-route'),
-                addRoute: root.getAttribute('data-add-route')
+                addRoute: root.getAttribute('data-add-route'),
+                titleTemplate: root.getAttribute('data-title-template')
             };
 
             // Extract Title (if exists)
@@ -45,27 +46,38 @@ class TorrentSearch {
 
             // Extract Body (content inside modal-body)
             const bodyEl = doc.querySelector('.modal-body');
-            // If body element has inline styles (likely), we might want to preserve a wrapper?
-            // specific to TorrentSearch.
-            // The template sends <div class="modal-body" ...> ... </div>
-            // We want the INNER HTML of that body.
             const bodyContent = bodyEl ? bodyEl.innerHTML : '';
 
-            // Note: The template's modal-header has specific styles. 
-            // We are using the standard Modal header now. 
-            // If we want to replicate the EXACT look, we might need a custom headerClass.
 
             const modal = new Modal({
                 size: 'lg',
                 windowClass: 'dialogs-default' // Standard look
             });
 
-            // Show the modal
-            modal.show(title, bodyContent);
+            // Show the modal with hidden header
+            modal.show('', bodyContent, '', 'hidden-modal-header');
 
-            // Initialize the interactive search component
-            // Pass the modal instance (wrapper) and the config
+
             TorrentSearch._instance = new TorrentSearch(modal, config);
+
+
+            // Bind Advanced Options Toggle (if present)
+            const toggleAdv = modal.el.querySelector('#torrent-advanced-toggle');
+            const advOptions = modal.el.querySelector('#torrent-advanced-options');
+            if (toggleAdv && advOptions) {
+                toggleAdv.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (advOptions.style.display === 'none') {
+                        advOptions.style.display = 'block';
+                        const span = toggleAdv.querySelector('span');
+                        if (span) span.innerText = 'Hide Advanced Options';
+                    } else {
+                        advOptions.style.display = 'none';
+                        const span = toggleAdv.querySelector('span');
+                        if (span) span.innerText = 'Show Advanced Options';
+                    }
+                });
+            }
 
         } catch (error) {
             console.error('TorrentSearch: Error opening dialog', error);
@@ -92,6 +104,7 @@ class TorrentSearch {
         this.detailsRoute = config.detailsRoute;
         this.addRoute = config.addRoute;
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        this.titleTemplate = config.titleTemplate || '';
 
         this.results = [];
         this.sortField = 'seeders';
@@ -114,10 +127,16 @@ class TorrentSearch {
         // Elements are inside this.el (the modal wrapper)
         this.searchInput = this.el.querySelector('#torrent-search-input');
         this.searchBtn = this.el.querySelector('#torrent-search-btn');
-        this.statusEl = this.el.querySelector('#torrent-search-status');
-        this.errorEl = this.el.querySelector('#torrent-search-error');
-        this.noResultsEl = this.el.querySelector('#torrent-no-results');
-        this.resultsContainer = this.el.querySelector('#torrent-results-container');
+
+        // Status Rows/Bodies
+        this.initialStateRow = this.el.querySelector('#torrent-initial-state');
+        this.searchingRow = this.el.querySelector('#torrent-searching-row');
+        this.noResultsRow = this.el.querySelector('#torrent-no-results-row');
+        this.noResultsQuery = this.el.querySelector('#torrent-no-results-query');
+        this.errorRow = this.el.querySelector('#torrent-error-row');
+        this.errorMsg = this.el.querySelector('#torrent-error-msg');
+
+        this.resultsHeader = this.el.querySelector('#torrent-results-header');
         this.resultsBody = this.el.querySelector('#torrent-results-body');
     }
 
@@ -143,8 +162,33 @@ class TorrentSearch {
         // Engine selector buttons
         this.el.querySelectorAll('.torrent-engine-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => b.classList.remove('active'));
+                // Return if already active
+                if (btn.classList.contains('active')) return;
+
+                // Deactivate all
+                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.color = 'white';
+                    const icon = b.querySelector('.tb-activeIcon');
+                    if (icon) {
+                        icon.classList.remove('glyphicon-ok');
+                        icon.classList.add('glyphicon-remove');
+                    }
+                });
+
+                // Activate clicked
                 btn.classList.add('active');
+                btn.style.color = 'gray'; // Matching original style for active
+                const icon = btn.querySelector('.tb-activeIcon');
+                if (icon) {
+                    icon.classList.remove('glyphicon-remove');
+                    icon.classList.add('glyphicon-ok');
+                }
+
+                // Trigger search if input is not empty
+                if (this.searchInput && this.searchInput.value.trim()) {
+                    this.doSearch();
+                }
             });
         });
 
@@ -227,9 +271,24 @@ class TorrentSearch {
             } else {
                 this.sortAndRender();
                 this.showStatus('results');
+                this.updateTitle();
             }
         } catch (error) {
             this.showStatus('error', error.message);
+        }
+    }
+
+    updateTitle() {
+        const header = this.el.querySelector('#torrent-dialog-header');
+        if (header && this.titleTemplate) {
+            // Replace :itemslength placeholder with actual count
+            let newTitle = this.titleTemplate.replace(':itemslength', this.results.length);
+            // If query exists, append it (optional, to match blade logic)
+            const query = this.searchInput?.value.trim();
+            if (query) {
+                newTitle += ` <small>(${query})</small>`;
+            }
+            header.innerHTML = newTitle;
         }
     }
 
@@ -239,10 +298,26 @@ class TorrentSearch {
         } else {
             this.sortField = field;
             this.sortDesc = (field !== 'releasename');
+
         }
 
         this.el.querySelectorAll('.torrent-sort').forEach(th => {
-            th.classList.toggle('active', th.dataset.sort === this.sortField);
+            const isMatch = th.dataset.sort === this.sortField;
+            const span = th.querySelector('span.sortorder');
+
+            // Reset others
+            if (!isMatch) {
+                if (span) span.className = 'sortorder';
+
+
+            } else {
+                if (span) {
+                    span.className = 'sortorder';
+                    if (!this.sortDesc) {
+                        span.classList.add('reverse');
+                    }
+                }
+            }
         });
 
         this.sortAndRender();
@@ -278,44 +353,79 @@ class TorrentSearch {
         if (!this.resultsBody) return;
 
         this.resultsBody.innerHTML = this.results.map((result, index) => {
+            // -- Actions Column Icons --
+
+            // 1. Magnet (Add to client)
             const magnetIcon = result.noMagnet
-                ? `<a href="javascript:void(0)" class="torrent-get-magnet" data-index="${index}" title="Fetch magnet link">
-                       <i class="glyphicon glyphicon-magnet" style="color: #aaa;"></i>
-                   </a>`
-                : (result.magnetUrl || result.torrentUrl
-                    ? `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client">
-                           <i class="glyphicon glyphicon-magnet" style="color: #5bc0de;"></i>
-                       </a>`
-                    : '');
+                ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-magnet" style="color:gray"></i></a>`
+                : (result.magnetUrl
+                    ? `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client"><i class="glyphicon glyphicon-magnet"></i></a>`
+                    : `<a href="javascript:void(0)" class="torrent-fetch-magnet" data-index="${index}" title="Fetch magnet link"><i class="glyphicon glyphicon-magnet" style="color: #aaa;"></i></a>`);
+
+            // 2. Download (Torrent File - Add to client)
+            const downloadIcon = result.noTorrent
+                ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-download" style="color:gray"></i></a>`
+                : (result.torrentUrl
+                    ? `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client"><i class="glyphicon glyphicon-download"></i></a>`
+                    : `<a href="javascript:void(0)" class="torrent-fetch-torrent" data-index="${index}" title="Fetch torrent file"><i class="glyphicon glyphicon-download" style="color: #aaa;"></i></a>`);
+
+            // 3. Link (Open Magnet/Torrent URL directly)
+
+            const linkIcon = result.magnetUrl
+                ? `<a href="${result.magnetUrl}" class="torrent-external-link" title="Magnet Link"><i class="glyphicon glyphicon-link"></i></a>`
+                : (result.noMagnet
+                    ? `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-link" style="color:gray"></i></a>`
+                    : `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-link" style="color:gray"></i></a>`);
+
+            // 4. Info (Details)
+            const infoIcon = result.detailUrl
+                ? `<a href="${result.detailUrl}" target="_blank" title="Torrent Details"><i class="glyphicon glyphicon-info-sign"></i></a>`
+                : `<a href="javascript:void(0)" class="disabled"><i class="glyphicon glyphicon-info-sign" style="color:gray"></i></a>`;
 
             return `<tr>
-                <td>${magnetIcon}</td>
+                <td style="width:80px; padding:5px; vertical-align: top; white-space: nowrap;">
+                    ${magnetIcon}
+                    ${downloadIcon}
+                    ${linkIcon}
+                    ${infoIcon}
+                </td>
+                <td>${this.escapeHtml(result.engine)}</td>
                 <td class="releasename" title="${this.escapeHtml(result.releasename)}">${this.escapeHtml(result.releasename)}</td>
                 <td style="text-align: right; white-space: nowrap;">${this.escapeHtml(result.size)}</td>
-                <td style="text-align: right; color: #5cb85c;">${result.seeders}</td>
-                <td style="text-align: right; color: #d9534f;">${result.leechers}</td>
+                <td style="text-align: right; color: #5cb85c; width:50px;">${result.seeders}</td>
+                <td style="text-align: right; color: #d9534f; width:50px;">${result.leechers}</td>
             </tr>`;
         }).join('');
 
-        this.resultsBody.querySelectorAll('.torrent-get-magnet').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const index = parseInt(link.dataset.index);
-                this.fetchDetails(index, link);
-            });
-        });
-
+        // Re-bind events
         this.resultsBody.querySelectorAll('.torrent-add-client').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const index = parseInt(link.dataset.index);
                 const result = this.results[index];
+                // Prefer magnet, then torrent
                 this.addTorrent(result.magnetUrl, result.torrentUrl, result.infoHash, result.releasename);
+            });
+        });
+
+        this.resultsBody.querySelectorAll('.torrent-fetch-magnet').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const index = parseInt(link.dataset.index);
+                this.fetchDetails(index, link, 'magnet');
+            });
+        });
+
+        this.resultsBody.querySelectorAll('.torrent-fetch-torrent').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const index = parseInt(link.dataset.index);
+                this.fetchDetails(index, link, 'torrent');
             });
         });
     }
 
-    async fetchDetails(index, linkEl) {
+    async fetchDetails(index, linkEl, type) {
         const result = this.results[index];
         if (!result) return;
 
@@ -323,6 +433,7 @@ class TorrentSearch {
         if (iconEl) {
             iconEl.className = 'glyphicon glyphicon-refresh';
             iconEl.style.animation = 'torrent-spin 1s linear infinite';
+            iconEl.style.color = '#5bc0de';
             if (!document.getElementById('torrent-spin-style')) {
                 const style = document.createElement('style');
                 style.id = 'torrent-spin-style';
@@ -349,21 +460,24 @@ class TorrentSearch {
 
             const data = await response.json();
 
-            if (data.magnetUrl || data.torrentUrl) {
-                result.magnetUrl = data.magnetUrl;
-                result.noMagnet = false;
-                if (data.torrentUrl) result.torrentUrl = data.torrentUrl;
+            // Update result with fetched data
+            if (data.magnetUrl) result.magnetUrl = data.magnetUrl;
+            if (data.torrentUrl) result.torrentUrl = data.torrentUrl;
+            if (data.infoHash) result.infoHash = data.infoHash;
 
-                this.addTorrent(result.magnetUrl, result.torrentUrl, result.infoHash, result.releasename);
+            if ((type === 'magnet' && result.magnetUrl) || (type === 'torrent' && result.torrentUrl)) {
+                this.renderResults();
+                return;
+            }
 
-                linkEl.outerHTML = `<a href="javascript:void(0)" class="torrent-add-client" data-index="${index}" title="Add to torrent client">
-                    <i class="glyphicon glyphicon-magnet" style="color: #5bc0de;"></i>
-                </a>`;
-            } else {
+            if (!result.magnetUrl && !result.torrentUrl) {
                 if (iconEl) {
                     iconEl.className = 'glyphicon glyphicon-remove';
                     iconEl.style.animation = '';
                     iconEl.style.color = '#d9534f';
+                    setTimeout(() => {
+                        if (iconEl) iconEl.style.color = '#aaa';
+                    }, 2000);
                 }
             }
         } catch (error) {
@@ -411,13 +525,35 @@ class TorrentSearch {
     }
 
     showStatus(state, message) {
-        if (this.statusEl) this.statusEl.style.display = (state === 'searching') ? 'block' : 'none';
-        if (this.errorEl) {
-            this.errorEl.style.display = (state === 'error') ? 'block' : 'none';
-            if (state === 'error') this.errorEl.textContent = message || 'Unknown error';
+        // Hide all first
+        if (this.initialStateRow) this.initialStateRow.style.display = 'none';
+        if (this.searchingRow) this.searchingRow.style.display = 'none';
+        if (this.noResultsRow) this.noResultsRow.style.display = 'none';
+        if (this.errorRow) this.errorRow.style.display = 'none';
+        if (this.resultsHeader) this.resultsHeader.style.display = 'none';
+        if (this.resultsBody) this.resultsBody.style.display = 'none';
+
+        // Show specific state
+        switch (state) {
+            case 'searching':
+                if (this.searchingRow) this.searchingRow.style.display = '';
+                break;
+            case 'empty':
+                if (this.noResultsRow) this.noResultsRow.style.display = '';
+                if (this.noResultsQuery && this.searchInput) this.noResultsQuery.innerText = this.searchInput.value;
+                break;
+            case 'error':
+                if (this.errorRow) this.errorRow.style.display = '';
+                if (this.errorMsg) this.errorMsg.textContent = message || 'Unknown error';
+                break;
+            case 'results':
+                if (this.resultsHeader) this.resultsHeader.style.display = '';
+                if (this.resultsBody) this.resultsBody.style.display = '';
+                break;
+            case 'initial':
+                if (this.initialStateRow) this.initialStateRow.style.display = '';
+                break;
         }
-        if (this.noResultsEl) this.noResultsEl.style.display = (state === 'empty') ? 'block' : 'none';
-        if (this.resultsContainer) this.resultsContainer.style.display = (state === 'results') ? 'block' : 'none';
     }
 
     escapeHtml(str) {

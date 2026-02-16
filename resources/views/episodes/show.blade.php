@@ -95,7 +95,7 @@
                             @php
                                 $searchQuery = ($serie->custom_search_string ?: $serie->name) . ' ' . $episode->formatted_episode;
                             @endphp
-                            <a href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.dialog', ['query' => $searchQuery, 'episode_id' => $episode->id]) }}')">
+                            <a href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.search-dialog', ['query' => $searchQuery, 'episode_id' => $episode->id]) }}')">
                                 <i class="glyphicon glyphicon-magnet"></i> <strong>{{ __('SIDEPANEL/EPISODE-DETAILS/find-torrent/btn') }}</strong>
                             </a>
                         </td>

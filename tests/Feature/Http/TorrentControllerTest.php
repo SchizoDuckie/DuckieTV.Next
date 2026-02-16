@@ -25,7 +25,7 @@ uses(RefreshDatabase::class);
 */
 
 it('renders the torrent search dialog with pre-filled query', function () {
-    $response = $this->get(route('torrents.dialog', [
+    $response = $this->get(route('torrents.search-dialog', [
         'query' => 'Breaking Bad S01E01',
         'episode_id' => 42,
     ]));
@@ -37,19 +37,26 @@ it('renders the torrent search dialog with pre-filled query', function () {
     $response->assertViewHas('engines');
     $response->assertViewHas('defaultEngine');
     $response->assertViewHas('qualityList');
-    $response->assertSee('FIND TORRENT');
+    $response->assertSee('Torrent Search');
     $response->assertSee('Breaking Bad S01E01');
+    
+    // Assert HTML Parity with torrent2.html
+    $response->assertSee('torrentDialog_topNav');
+    $response->assertSee('torrentDialog_searchBar');
+    $response->assertSee('torrentDialog_qualityBtns');
+    $response->assertSee('torrent-search-input'); // JS Hook
+    $response->assertSee('torrent-search-btn'); // JS Hook
 });
 
 it('renders the search dialog with default values when no params given', function () {
-    $response = $this->get(route('torrents.dialog'));
+    $response = $this->get(route('torrents.search-dialog'));
 
     $response->assertStatus(200);
     $response->assertViewHas('query', '');
 });
 
 it('includes all registered engines in the dialog', function () {
-    $response = $this->get(route('torrents.dialog'));
+    $response = $this->get(route('torrents.search-dialog'));
 
     $response->assertStatus(200);
     $engines = $response->viewData('engines');

@@ -26,10 +26,99 @@
         sidepanel, background-rotator {
             display: block;
         }
+
+        /* Watchlist Easter Egg */
+        #wl {
+            display: none !important;
+        }
+        body.kc #wl {
+            display: block !important;
+        }
+        /* Trakt Trending Overlay */
+        .overlay-panel {
+            position: fixed;
+            top: -100%;
+            left: 0;
+            right: 0;
+            height: 90vh; /* Drops down to cover most of the screen */
+            background: rgba(20, 22, 24, 0.95);
+            z-index: 2000;
+            transition: top 0.3s ease-in-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            padding: 20px;
+            color: #fff;
+            overflow-y: auto;
+        }
+        .overlay-panel.active {
+            top: 0;
+        }
+        .overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+        .overlay-header h2 { margin: 0; font-family: 'bebasbold'; }
+        .close-overlay {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .close-overlay:hover { color: #d9534f; }
     </style>
     @stack('styles')
+    <style>
+        /* Trakt Trending Overlay */
+        .overlay-panel {
+            position: fixed;
+            top: -100%;
+            left: 0;
+            right: 0;
+            height: 90vh; /* Drops down to cover most of the screen */
+            background: rgba(20, 22, 24, 0.95);
+            z-index: 2000;
+            transition: top 0.3s ease-in-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            padding: 20px;
+            color: #fff;
+            overflow-y: auto;
+        }
+        .overlay-panel.active {
+            top: 0;
+        }
+        .overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+        .overlay-header h2 { margin: 0; font-family: 'bebasbold'; }
+        .close-overlay {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .close-overlay:hover { color: #d9534f; }
+        
+        /* SidePanel Wide Mode (Double-wide) */
+        sidepanel .sidepanel.wide {
+            width: 900px !important;
+            max-width: 90vw;
+        }
+        sidepanel .sidepanel.wide .leftpanel {
+            width: 100%;
+        }
+    </style>
 </head>
-<body>
+<body class="{{ app(\App\Services\SettingsService::class)->get('kc.always', false) ? 'kc' : '' }}">
     <background-rotator>
         <div class="background-image-container">
             <div class="placeholder active"></div>
@@ -56,29 +145,67 @@
     <div id="actionbar">
         <div class="logo" onclick="window.location='{{ route('home') }}'" style="cursor:pointer" title="Quack!"></div>
         <ul class="list-unstyled">
-            <li id="actionbar_calendar">
-                <a href="{{ route('calendar.index') }}" title="Calendar" class="glyphicon glyphicon-calendar"></a>
+            <li id="calendar">
+                <a href="{{ route('calendar.index') }}" title="{{ __('COMMON/calendar/hdr') }}" class="glyphicon glyphicon-calendar"></a>
             </li>
-            <li id="actionbar_favorites">
-                <a href="{{ route('series.index') }}" title="Library" class="glyphicon glyphicon-heart"></a>
+            <li id="favorites">
+                <a href="{{ route('series.index') }}" title="{{ __('COMMON/favorites/hdr') }}" class="glyphicon glyphicon-heart"></a>
             </li>
-            <li id="actionbar_add_favorites">
-                <a href="{{ route('search.index') }}" title="Add Show" class="glyphicon glyphicon-plus"></a>
+            <li id="add_favorites">
+                <a href="{{ route('search.index') }}" title="{{ __('SERIESLIST/TOOLS/FAVORITES/addshow-show/glyph') }}" class="glyphicon glyphicon-plus"></a>
+            </li>
+            <li id="wl">
+                <a href="{{ route('watchlist.index') }}" title="{{ __('ACTIONBAR/watchlist/tooltip') }}" class="glyphicon glyphicon-facetime-video"></a>
             </li>
             <li id="actionbar_trakt">
-                <a href="#" title="Trakt.TV Trending" class="glyphicon glyphicon-film"></a>
+                <a href="{{ route('search.trending') }}" title="{{ __('SERIESLIST/trakt-trending/hdr') }}" class="glyphicon glyphicon-film"></a>
             </li>
+            <li id="actionbar_search">
+                <a href="#" title="{{ __('TORRENTDIALOG/search-download-any/tooltip') }}" class="glyphicon glyphicon-download"
+                   onclick="TorrentSearch.open('{{ route('torrents.search-dialog') }}'); return false;"></a>
+            </li>
+            @inject('torrentService', 'App\Services\TorrentClientService')
+            @php
+                $activeClient = $torrentService->getActiveClient();
+                $clientClass = 'none';
+                if ($activeClient) {
+                    $name = strtolower($activeClient->getName());
+                    if (str_contains($name, 'utorrent')) $clientClass = 'utorrent';
+                    elseif (str_contains($name, 'qbittorrent')) $clientClass = 'qbittorrent';
+                    elseif (str_contains($name, 'transmission')) $clientClass = 'transmission';
+                    elseif (str_contains($name, 'deluge')) $clientClass = 'deluge';
+                    elseif (str_contains($name, 'vuze')) $clientClass = 'vuze';
+                    elseif (str_contains($name, 'biglybt')) $clientClass = 'biglybt';
+                    elseif (str_contains($name, 'tixati')) $clientClass = 'tixati';
+                    elseif (str_contains($name, 'rtorrent')) $clientClass = 'rtorrent';
+                    elseif (str_contains($name, 'ktorrent')) $clientClass = 'ktorrent';
+                    elseif (str_contains($name, 'aria2')) $clientClass = 'aria2';
+                    elseif (str_contains($name, 'ttorrent')) $clientClass = 'ttorrent';
+                }
+            @endphp
             <li id="actionbar_torrent">
-                <a href="#" title="DuckieTorrent" class="glyphicon glyphicon-hdd"
+                <a href="#" title="{{ $activeClient ? $activeClient->getName() : 'DuckieTorrent' }}" class="glyphicon {{ $clientClass }}"
                    data-sidepanel-show="{{ route('torrents.index') }}"></a>
             </li>
             <div style="position:absolute;bottom:0px">
+                <li id="actionbar_switch">
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('toggle-viewmode-form').submit();" 
+                       title="{{ __('ACTIONBAR/switch-todo-calendar/tooltip') }}" class="glyphicon glyphicon-check"></a>
+                    <form id="toggle-viewmode-form" action="{{ route('settings.toggle-viewmode') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
+                </li>
+                <li id="actionbar_autodlstatus">
+                    <a href="#" title="{{ __('COMMON/auto-download-status/hdr') }}" class="glyphicon glyphicon-list"
+                       data-sidepanel-show="{{ route('autodlstatus.index') }}"></a>
+                </li>
                 <li id="actionbar_settings">
-                    <a href="#" title="Settings" class="glyphicon glyphicon-cog"
+                    <a href="#" title="{{ __('COMMON/settings/hdr') }}" class="glyphicon glyphicon-cog"
                        data-sidepanel-show="{{ route('settings.index') }}"></a>
                 </li>
                 <li id="actionbar_about">
-                    <a href="#" title="About" class="glyphicon glyphicon-info-sign"></a>
+                     <a href="#" title="{{ __('COMMON/about/hdr') }}" class="glyphicon glyphicon-info-sign"
+                        data-sidepanel-show="{{ route('about.index') }}"></a>
                 </li>
             </div>
         </ul>
@@ -115,8 +242,19 @@
     <script src="{{ asset('js/Calendar.js') }}"></script>
     <script src="{{ asset('js/BackgroundRotator.js') }}"></script>
     <script src="{{ asset('js/TorrentSearch.js') }}"></script>
+    <script src="{{ asset('js/TraktTrending.js') }}"></script>
+
+    {{-- Trakt Trending Overlay --}}
+    <div id="trakt-trending-overlay" class="overlay-panel">
+        <div class="overlay-header">
+            <h2>{{ __('COMMON/addtrending/hdr') }}</h2>
+            <button class="close-overlay">&times;</button>
+        </div>
+        <div class="content"></div>
+    </div>
     <script src="{{ asset('js/Settings.js') }}"></script>
     <script src="{{ asset('js/TorrentClient.js') }}"></script>
+    <script src="{{ asset('js/DialGauge.js') }}"></script>
     <script src="{{ asset('js/PollingService.js') }}"></script>
     <script src="{{ asset('js/Modal.js') }}"></script>
     <script src="{{ asset('js/BackupRestore.js') }}"></script>
@@ -129,7 +267,11 @@
             window.BackgroundRotator = new BackgroundRotator({
                 route: '{{ route('background.random') }}'
             });
-            window.PollingService = new PollingService();
+            window.PollingService = new PollingService(2000, {
+                connected: "{{ __('COMMON/torrent/connected_to') }}",
+                disconnected: "{{ __('COMMON/torrent/disconnected') }}",
+                error: "{{ __('COMMON/error') }}"
+            });
             window.PollingService.start();
             window.BackupRestore.init({
                 'BACKUPCTRLjs/restore/intro': '{{ __("BACKUPCTRLjs/restore/intro") }}',

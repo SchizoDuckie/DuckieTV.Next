@@ -90,7 +90,7 @@
                                     @php
                                         $epSearchQuery = ($serie->custom_search_string ?: $serie->name) . ' ' . $episode->formatted_episode;
                                     @endphp
-                                    <a href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.dialog', ['query' => $epSearchQuery, 'episode_id' => $episode->id]) }}')" title="Find torrent" class="auto-download-episode">
+                                    <a href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.search-dialog', ['query' => $epSearchQuery, 'episode_id' => $episode->id]) }}')" title="Find torrent" class="auto-download-episode">
                                         <i class="glyphicon glyphicon-magnet"></i>
                                     </a>
                                 </div>
@@ -135,7 +135,7 @@
                                     @php
                                         $seasonSearchQuery = ($serie->custom_search_string ?: $serie->name) . ' season ' . $activeSeason->seasonnumber;
                                     @endphp
-                                    <a class="torrent-dialog auto-download" href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.dialog', ['query' => $seasonSearchQuery]) }}')" title="Search & Download: {{ $seasonSearchQuery }}">
+                                    <a class="torrent-dialog auto-download" href="javascript:void(0)" onclick="TorrentSearch.open('{{ route('torrents.search-dialog', ['query' => $seasonSearchQuery]) }}')" title="Search & Download: {{ $seasonSearchQuery }}">
                                         <i class="glyphicon glyphicon-download"></i>
                                         <strong style="display:flex">&nbsp;</strong>
                                     </a>

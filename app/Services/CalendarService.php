@@ -251,6 +251,39 @@ class CalendarService
     }
 
     /**
+     * Get episode counts per year for a given decade (or range of years).
+     * Used by the decade overview calendar view.
+     *
+     * @param  int  $startYear
+     * @param  int  $endYear
+     * @return array<int, int> Year => episode count
+     */
+    public function getEpisodeCountsByYear(int $startYear, int $endYear): array
+    {
+        $start = \Carbon\Carbon::create($startYear, 1, 1)->startOfDay();
+        $end = \Carbon\Carbon::create($endYear, 12, 31)->endOfDay();
+
+        $episodes = Episode::where('firstaired', '>=', $start->getTimestampMs())
+            ->where('firstaired', '<=', $end->getTimestampMs())
+            ->whereHas('serie', fn ($q) => $q->where('displaycalendar', true))
+            ->get(['firstaired']);
+
+        $counts = [];
+        for ($y = $startYear; $y <= $endYear; $y++) {
+            $counts[$y] = 0;
+        }
+
+        foreach ($episodes as $ep) {
+            $year = \Carbon\Carbon::createFromTimestampMs($ep->firstaired)->year;
+            if (isset($counts[$year])) {
+                $counts[$year]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
      * Sort two calendar events.
      * First by air time (firstaired_iso), then by episode number if same serie,
      * then by serie name if different series at the same time.
