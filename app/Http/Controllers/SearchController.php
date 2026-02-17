@@ -42,8 +42,8 @@ class SearchController extends Controller
         $favoriteIds = $this->favorites->getFavoriteIds();
 
         if ($request->ajax()) {
-            return view('search.index', [
-                'results' => $trending, // Pass trending as results for the initial view
+            return view('search.partial', [
+                'results' => $trending,
                 'query' => null,
                 'favoriteIds' => $favoriteIds,
             ]);
@@ -75,6 +75,14 @@ class SearchController extends Controller
         }
 
         $favoriteIds = $this->favorites->getFavoriteIds();
+
+        if ($request->ajax()) {
+            return view('search.partial', [
+                'results' => $results,
+                'query' => $query,
+                'favoriteIds' => $favoriteIds,
+            ]);
+        }
 
         return view('search.index', [
             'results' => $results,

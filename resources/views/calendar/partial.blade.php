@@ -4,8 +4,7 @@
        our "month" mode = original ng-switch-when="date"   (day/date calendar grid)
        our "week" mode  = original ng-switch-when="week"   (single week strip)
 --}}
-<calendar>
-    <div date-picker>
+<div date-picker>
 
         @if($mode === 'decade')
         <div ng-switch-when="year">
@@ -240,4 +239,3 @@
             </table>
         </div>
     </div>
-</calendar>

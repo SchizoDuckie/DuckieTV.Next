@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class FavoritesService
 {
+    protected $initialized = false;
+
     private SettingsService $settings;
 
     private TMDBService $tmdb;
@@ -344,12 +346,99 @@ class FavoritesService
         return Serie::whereNotNull('name')->get();
     }
 
+    /**
+     * Get filtered and sorted series for the Library view.
+     * Supports search query, status/genre filters, and ordering.
+     */
+    public function getFilteredSeries(array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = Serie::whereNotNull('name');
+
+        if (!empty($filters['query'])) {
+            $q = $filters['query'];
+            $query->where(function($sub) use ($q) {
+                $sub->where('name', 'LIKE', "%{$q}%")
+                    ->orWhere('alias', 'LIKE', "%{$q}%");
+            });
+        }
+
+        if (!empty($filters['status'])) {
+            $status = (array) $filters['status'];
+            $query->whereIn('status', $status);
+        }
+
+        if (!empty($filters['genre'])) {
+            $genres = (array) $filters['genre'];
+            $query->where(function($sub) use ($genres) {
+                foreach ($genres as $genre) {
+                    $sub->orWhere('genre', 'LIKE', "%{$genre}%");
+                }
+            });
+        }
+
+        $orderBy = $filters['sort'] ?? 'name';
+        $direction = $filters['direction'] ?? 'asc';
+
+        switch ($orderBy) {
+            case 'rating':
+                $query->orderBy('rating', $direction === 'asc' ? 'desc' : 'asc'); // Usually want highest rating first
+                break;
+            case 'added':
+                $query->orderBy('added', $direction === 'asc' ? 'desc' : 'asc');
+                break;
+            case 'next_episode':
+                // This would require a join or subquery, for now we fallback to name
+                $query->orderBy('name');
+                break;
+            default:
+                $query->orderBy('name', $direction);
+                break;
+        }
+
+        return $query->get();
+    }
+
     public function getFavoriteIds(): array
     {
         return Serie::whereNotNull('trakt_id')
             ->pluck('trakt_id')
             ->map(fn ($id) => (string) $id)
             ->all();
+    }
+
+    /**
+     * Get all unique statuses present in the user's library.
+     */
+    public function getUniqueStatuses(): array
+    {
+        return Serie::whereNotNull('status')
+            ->where('status', '!=', '')
+            ->distinct()
+            ->pluck('status')
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Get all unique genres present in the user's library.
+     */
+    public function getUniqueGenres(): array
+    {
+        $genres = Serie::whereNotNull('genre')
+            ->where('genre', '!=', '')
+            ->pluck('genre');
+
+        $unique = collect();
+        foreach ($genres as $genreString) {
+            foreach (explode('|', $genreString) as $genre) {
+                if ($genre = trim(strtolower($genre))) {
+                    $unique->push($genre);
+                }
+            }
+        }
+
+        return $unique->unique()->sort()->values()->all();
     }
 
     public function getEpisodesForDateRange(int $start, int $end): \Illuminate\Database\Eloquent\Collection

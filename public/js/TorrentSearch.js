@@ -77,38 +77,29 @@ class TorrentSearch {
                 });
             }
 
-            // Bind Engine Toggles (in Advanced Options)
-            modal.el.querySelectorAll('.engine-toggle').forEach(checkbox => {
-                checkbox.addEventListener('change', async () => {
-                    const engine = checkbox.dataset.engine;
-                    const isEnabled = checkbox.checked;
-
-                    try {
-                        const enabledEngines = Array.from(modal.el.querySelectorAll('.engine-toggle:checked'))
-                            .map(cb => cb.dataset.engine);
-
-                        await fetch('/settings/torrent-search', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                                'X-Requested-With': 'XMLHttpRequest',
-                            },
-                            body: JSON.stringify({
-                                'torrenting.search_enabled_engines': enabledEngines
-                            }),
-                        });
-
-                        // To keep it simple and clean, we trigger a search which will also update the UI
-                        // (Alternatively, we could re-render the selection bar buttons here)
-                        if (TorrentSearch._instance) {
-                            TorrentSearch._instance.doSearch();
-                        }
-                    } catch (e) {
-                        console.error('Failed to save engine setting', e);
+            // Bind Engine Toggles via delegation on the modal
+            modal.el.addEventListener('change', async (e) => {
+                const checkbox = e.target.closest('.engine-toggle');
+                if (!checkbox) return;
+                try {
+                    const enabledEngines = Array.from(modal.el.querySelectorAll('.engine-toggle:checked'))
+                        .map(cb => cb.dataset.engine);
+                    await fetch('/settings/torrent-search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ 'torrenting.search_enabled_engines': enabledEngines }),
+                    });
+                    if (TorrentSearch._instance) {
+                        TorrentSearch._instance.doSearch();
                     }
-                });
+                } catch (e) {
+                    console.error('Failed to save engine setting', e);
+                }
             });
 
 
@@ -122,6 +113,17 @@ class TorrentSearch {
         if (TorrentSearch._instance) {
             TorrentSearch._instance.modal.hide();
             TorrentSearch._instance = null;
+        }
+    }
+
+    static init() {
+        const btn = document.querySelector('#actionbar_search a');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                TorrentSearch.open(btn.getAttribute('href'));
+            });
         }
     }
 
@@ -177,56 +179,64 @@ class TorrentSearch {
     // ... (rest of the file)
 
     bindEvents() {
-        // ... (existing bindings)
-
-        // Event Delegation for Results Table
-        if (this.resultsBody) {
-            this.resultsBody.addEventListener('click', (e) => {
-                // 1. Add to Client
-                const addBtn = e.target.closest('.torrent-add-client');
-                if (addBtn) {
-                    e.preventDefault();
-                    this.addTorrent(
-                        addBtn.dataset.magnet,
-                        addBtn.dataset.url,
-                        addBtn.dataset.infoHash,
-                        addBtn.dataset.releaseName
-                    );
-                    return;
-                }
-
-                // 2. Fetch Magnet
-                const magnetBtn = e.target.closest('.torrent-fetch-magnet');
-                if (magnetBtn) {
-                    e.preventDefault();
-                    const index = parseInt(magnetBtn.dataset.index);
-                    this.fetchDetails(index, magnetBtn, 'magnet');
-                    return;
-                }
-
-                // 3. Fetch Torrent file
-                const torrentBtn = e.target.closest('.torrent-fetch-torrent');
-                if (torrentBtn) {
-                    e.preventDefault();
-                    const index = parseInt(torrentBtn.dataset.index);
-                    this.fetchDetails(index, torrentBtn, 'torrent');
-                    return;
-                }
+        if (this.searchBtn) {
+            this.searchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.doSearch();
+            });
+        }
+        if (this.searchInput) {
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.doSearch();
             });
         }
 
-        // Engine Selection Buttons
-        this.el.querySelectorAll('.torrent-engine-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Single delegated listener for all interactive elements in the modal
+        this.el.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('.torrent-add-client');
+            if (addBtn) {
                 e.preventDefault();
-                // Update active state
-                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+                this.addTorrent(addBtn.dataset.magnet, addBtn.dataset.url, addBtn.dataset.infoHash, addBtn.dataset.releaseName);
+                return;
+            }
 
-                // Update current engine and search
-                this.currentEngine = btn.dataset.engine;
+            const magnetBtn = e.target.closest('.torrent-fetch-magnet');
+            if (magnetBtn) {
+                e.preventDefault();
+                this.fetchDetails(parseInt(magnetBtn.dataset.index), magnetBtn, 'magnet');
+                return;
+            }
+
+            const torrentBtn = e.target.closest('.torrent-fetch-torrent');
+            if (torrentBtn) {
+                e.preventDefault();
+                this.fetchDetails(parseInt(torrentBtn.dataset.index), torrentBtn, 'torrent');
+                return;
+            }
+
+            const engineBtn = e.target.closest('.torrent-engine-btn');
+            if (engineBtn) {
+                e.preventDefault();
+                this.el.querySelectorAll('.torrent-engine-btn').forEach(b => b.classList.remove('active'));
+                engineBtn.classList.add('active');
+                this.currentEngine = engineBtn.dataset.engine;
                 this.doSearch();
-            });
+                return;
+            }
+
+            const sortBtn = e.target.closest('.torrent-sort');
+            if (sortBtn) {
+                e.preventDefault();
+                this.toggleSort(sortBtn.dataset.sort);
+                return;
+            }
+
+            const qualityBtn = e.target.closest('.quality-btn');
+            if (qualityBtn) {
+                e.preventDefault();
+                this.toggleQuality(qualityBtn);
+                return;
+            }
         });
     }
 
@@ -357,32 +367,9 @@ class TorrentSearch {
     }
 
     sortAndRender() {
-        const field = this.sortField;
-        const desc = this.sortDesc;
-
-        this.results.sort((a, b) => {
-            let valA = a[field];
-            let valB = b[field];
-
-            if (field === 'size') {
-                valA = parseFloat(valA) || 0;
-                valB = parseFloat(valB) || 0;
-            }
-
-            if (typeof valA === 'number' && typeof valB === 'number') {
-                return desc ? valB - valA : valA - valB;
-            }
-
-            const strA = String(valA || '').toLowerCase();
-            const strB = String(valB || '').toLowerCase();
-            const cmp = strA.localeCompare(strB);
-            return desc ? -cmp : cmp;
-        });
-
-        this.renderResults();
+        // Sort is passed server-side via sortBy param; this.sortField/sortDesc are already updated by toggleSort()
+        this.doSearch();
     }
-
-    // renderResults() and bindResultEvents() removed in favor of event delegation in bindEvents());
 
     async fetchDetails(index, linkEl, type) {
         const result = this.results[index];
@@ -425,7 +412,21 @@ class TorrentSearch {
             if (data.infoHash) result.infoHash = data.infoHash;
 
             if ((type === 'magnet' && result.magnetUrl) || (type === 'torrent' && result.torrentUrl)) {
-                this.renderResults();
+                // Update the row's add-button data attrs in place so the delegation handler picks them up
+                const row = linkEl.closest('tr');
+                if (row) {
+                    const addBtn = row.querySelector('.torrent-add-client');
+                    if (addBtn) {
+                        if (result.magnetUrl) addBtn.dataset.magnet = result.magnetUrl;
+                        if (result.torrentUrl) addBtn.dataset.url = result.torrentUrl;
+                        if (result.infoHash) addBtn.dataset.infoHash = result.infoHash;
+                    }
+                }
+                if (iconEl) {
+                    iconEl.className = 'glyphicon glyphicon-ok';
+                    iconEl.style.animation = '';
+                    iconEl.style.color = '#5cb85c';
+                }
                 return;
             }
 

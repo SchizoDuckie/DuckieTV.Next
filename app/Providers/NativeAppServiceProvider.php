@@ -36,12 +36,12 @@ class NativeAppServiceProvider implements ProvidesPhpIni
                 Menu::make(
                     Menu::label('DuckieTV'),
                     Menu::separator(),
-                    Menu::callback(fn() => Window::open()->url(route('home')), 'Show DuckieTV'),
-                    Menu::callback(fn() => Window::open()->url(route('calendar.index')), 'Show Calendar'),
-                    Menu::callback(fn() => Window::open()->url(route('series.index')), 'Show Favorites'),
-                    Menu::callback(fn() => Window::open()->url(route('autodlstatus.index')), 'Show ADLStatus'),
-                    Menu::callback(fn() => Window::open()->url(route('settings.index')), 'Show Settings'),
-                    Menu::callback(fn() => Window::open()->url(route('about.index')), 'Show About'),
+                    Menu::route('home', 'Show DuckieTV'),
+                    Menu::route('calendar.index', 'Show Calendar'),
+                    Menu::route('series.index', 'Show Favorites'),
+                    Menu::route('autodlstatus.index', 'Show ADLStatus'),
+                    Menu::route('settings.index', 'Show Settings'),
+                    Menu::route('about.index', 'Show About'),
                     Menu::separator(),
                     Menu::quit()
                 )

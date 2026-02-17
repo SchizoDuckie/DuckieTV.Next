@@ -23,13 +23,15 @@ class SeriesController extends Controller
      */
     public function index(Request $request)
     {
-        $series = $this->favorites->getSeries();
+        $series = $this->favorites->getFilteredSeries($request->all());
+        $genres = $this->favorites->getUniqueGenres();
+        $statuses = $this->favorites->getUniqueStatuses();
 
-        if ($request->wantsJson() || $request->has('tui')) {
-            return response()->json($series);
+        if ($request->ajax()) {
+            return view('series.partial', compact('series', 'genres', 'statuses'));
         }
 
-        return view('series.index', compact('series'));
+        return view('series.index', compact('series', 'genres', 'statuses'));
     }
 
     /**
@@ -40,7 +42,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 
@@ -62,7 +64,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 
@@ -80,11 +82,11 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 
-        $serie->load(['seasons' => fn ($q) => $q->orderBy('seasonnumber')]);
+        $serie->load(['seasons' => fn($q) => $q->orderBy('seasonnumber')]);
 
         return view('series._seasons', compact('serie'));
     }
@@ -102,7 +104,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 
@@ -113,9 +115,9 @@ class SeriesController extends Controller
         if ($season_id) {
             $activeSeason = $seasons->firstWhere('id', $season_id);
         }
-        if (! isset($activeSeason) || ! $activeSeason) {
+        if (!isset($activeSeason) || !$activeSeason) {
             // Default: first season with unwatched episodes, or last season
-            $activeSeason = $seasons->first(fn ($s) => $s->episodes->where('watched', false)->isNotEmpty())
+            $activeSeason = $seasons->first(fn($s) => $s->episodes->where('watched', false)->isNotEmpty())
                 ?? $seasons->last();
         }
 
@@ -128,10 +130,10 @@ class SeriesController extends Controller
         $seasonSearchQuery = ($serie->customSearchString ?: $serie->name) . ' season ' . $activeSeason->seasonnumber;
 
         // Calculate ratings data for the chart
-        $ratingPoints = $activeSeason->episodes->sortBy('episodenumber')->map(function($episode) {
+        $ratingPoints = $activeSeason->episodes->sortBy('episodenumber')->map(function ($episode) {
             return [
-                'y' => $episode->rating ?? 0,
-                'label' => $episode->formatted_episode . ' : ' . ($episode->rating ?? 0) . '% (' . ($episode->ratingcount ?? 0) . ' ' . __('votes') . ')',
+            'y' => $episode->rating ?? 0,
+            'label' => $episode->formatted_episode . ' : ' . ($episode->rating ?? 0) . '% (' . ($episode->ratingcount ?? 0) . ' ' . __('votes') . ')',
             ];
         })->values();
 
@@ -158,7 +160,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 
@@ -166,13 +168,17 @@ class SeriesController extends Controller
 
         if ($action === 'mark_watched') {
             $serie->markSerieAsWatched();
-        } elseif ($action === 'mark_downloaded') {
+        }
+        elseif ($action === 'mark_downloaded') {
             $serie->markSerieAsDownloaded();
-        } elseif ($action === 'toggle_autodownload') {
+        }
+        elseif ($action === 'toggle_autodownload') {
             $serie->toggleAutoDownload();
-        } elseif ($action === 'toggle_calendar') {
+        }
+        elseif ($action === 'toggle_calendar') {
             $serie->toggleCalendarDisplay();
-        } elseif ($action === 'mark_season_watched') {
+        }
+        elseif ($action === 'mark_season_watched') {
             $seasonId = $request->input('season_id');
             $season = $serie->seasons()->find($seasonId);
             if ($season) {
@@ -182,7 +188,8 @@ class SeriesController extends Controller
                     }
                 }
             }
-        } elseif ($action === 'mark_season_downloaded') {
+        }
+        elseif ($action === 'mark_season_downloaded') {
             $seasonId = $request->input('season_id');
             $season = $serie->seasons()->find($seasonId);
             if ($season) {
@@ -208,7 +215,7 @@ class SeriesController extends Controller
     {
         $serie = $this->favorites->getById($id);
 
-        if (! $serie) {
+        if (!$serie) {
             return abort(404, 'Show not found');
         }
 

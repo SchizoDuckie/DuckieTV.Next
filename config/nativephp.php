@@ -86,6 +86,15 @@ return [
         'content',
         'node_modules',
         '*/tests',
+        '.agent',
+        'DuckieTV-angular',
+        '.antigravity',
+        '.claude',
+        '.github',
+        'DuckieTV.Next Migration-Plan.md',
+        'phpunit.xml',
+        'psalm.xml',
+        'phpstan.neon',
     ],
 
     /**

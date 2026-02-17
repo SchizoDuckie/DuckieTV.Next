@@ -1,5 +1,22 @@
 window.Subtitles = {
     /**
+     * Global initializer for action bar triggers
+     */
+    init: function () {
+        // DIRECT BINDING ONLY
+        const btn = document.querySelector('#actionbar_subtitles a');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.search();
+                return false;
+            });
+        }
+        // Removed global document delegation as requested
+    },
+
+    /**
      * Search for subtitles for a specific episode or by query string.
      * @param {string|number|null} query Optional query string or episodeId
      */

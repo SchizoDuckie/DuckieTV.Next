@@ -17,7 +17,7 @@ class AboutController extends Controller
 
         return view('layouts.app', [
             'title' => 'About',
-            'sidePanelUrl' => route('about.index')
+            'view' => 'about.index'
         ]);
     }
 }

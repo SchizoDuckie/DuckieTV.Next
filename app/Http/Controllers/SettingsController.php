@@ -29,15 +29,8 @@ class SettingsController extends Controller
     /**
      * Display the settings menu (Left Panel).
      */
-    public function index(Request $request): View
+    public function index(): View
     {
-        if (! $request->ajax()) {
-            return view('layouts.app', [
-                'title' => 'Settings',
-                'sidePanelUrl' => route('settings.index')
-            ]);
-        }
-
         return view('settings.index', [
             'locales' => $this->translationService->getAvailableLocales(),
             'supportedClients' => $this->getSupportedClients(),

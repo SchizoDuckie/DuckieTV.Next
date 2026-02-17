@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DuckieTV.Next - {{ $title ?? 'Home' }}</title>
+    <title>{{ $title ?? 'DuckieTV' }}</title>
+    <style>
+        serieheader { display: inline-block; vertical-align: top; }
+    </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Legacy Styles (same load order as original tab.html) -->
@@ -14,23 +17,31 @@
     <link rel="stylesheet" href="{{ asset('css/toasts.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dialogs.css') }}">
 
-
     <style>
-        /* Only styles NOT covered by main.css */
+        /* Only styles NOT covered by legacy CSS */
         body {
             background-color: #000;
             overflow-x: hidden;
         }
-
-        /* Ensure custom tag is treated as block */
-        sidepanel, background-rotator {
-            display: block;
+        /* Match original layout details */
+        .actionbar-bottom {
+            position: absolute;
+            bottom: 0px;
+            width: 58px;
         }
     </style>
     @stack('styles')
 </head>
-<body class="{{ app(\App\Services\SettingsService::class)->get('kc.always', false) ? 'kc' : '' }}">
-    <background-rotator>
+<body class="{{ app(\App\Services\SettingsService::class)->get('kc.always', false) ? 'kc' : '' }} standalone">
+
+    <div class="windowChrome">
+        <button class="glyphicon glyphicon-win-minimize" id="minimize" title="Minimize"></button>
+        <button class="glyphicon glyphicon-win-restore" id="unmaximize" title="Restore Down" style="display:none"></button>
+        <button class="glyphicon glyphicon-win-maximize" id="maximize" title="Maximize"></button>
+        <button class="glyphicon glyphicon-win-close" id="close" title="Close"></button>
+    </div>
+
+    <background-rotator channel="'background:load'">
         <div class="background-image-container">
             <div class="placeholder active"></div>
             <div class="bg1"></div>
@@ -39,79 +50,68 @@
         <div class="background-details"></div>
     </background-rotator>
 
-    {{-- Matches original tab.html: .container floats right of #actionbar --}}
-    <div class="container">
-        @if(session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
-        @endif
+    @yield('calendar_container')
 
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+    @yield('content')
 
-        @yield('content')
-    </div>
+    <series-list ui-view="favorites">
+        <div class="series-list"></div>
+    </series-list>
 
-    {{-- Matches original templates/actionBar.html --}}
-    <div id="actionbar">
-        <div class="logo" onclick="window.location='{{ route('home') }}'" style="cursor:pointer" title="Quack!"></div>
-        <ul class="list-unstyled">
-            <li id="calendar">
-                <a href="{{ route('calendar.index') }}" title="{{ __('COMMON/calendar/hdr') }}" class="glyphicon glyphicon-calendar"></a>
-            </li>
-            <li id="favorites">
-                <a href="{{ route('series.index') }}" title="{{ __('COMMON/favorites/hdr') }}" class="glyphicon glyphicon-heart"></a>
-            </li>
-            <li id="add_favorites">
-                <a href="{{ route('search.index') }}" title="{{ __('SERIESLIST/TOOLS/FAVORITES/addshow-show/glyph') }}" class="glyphicon glyphicon-plus"></a>
-            </li>
-            <li id="wl">
-                <a href="{{ route('watchlist.index') }}" title="{{ __('ACTIONBAR/watchlist/tooltip') }}" class="glyphicon glyphicon-facetime-video"></a>
-            </li>
-            <li id="actionbar_trakt">
-                <a href="{{ route('search.trending') }}" title="{{ __('SERIESLIST/trakt-trending/hdr') }}" class="glyphicon glyphicon-film"></a>
-            </li>
-            <li id="actionbar_search">
-                <a href="#" title="{{ __('TORRENTDIALOG/search-download-any/tooltip') }}" class="glyphicon glyphicon-download"
-                   onclick="TorrentSearch.open('{{ route('torrents.search-dialog') }}'); return false;"></a>
-            </li>
-            <li id="actionbar_subtitles">
-                <a href="#" title="{{ __('COMMON/find-subtitle/lbl') }}" class="glyphicon glyphicon-text-width"
-                   onclick="Subtitles.search(); return false;"></a>
-            </li>
-            {{-- TorrentClientComposer injects $activeClient and $clientClass --}}
-            <li id="actionbar_torrent">
-                <a href="#" title="{{ $activeClient ? $activeClient->getName() : 'DuckieTorrent' }}" class="glyphicon {{ $clientClass }}"
-                   data-sidepanel-show="{{ route('torrents.index') }}"></a>
-            </li>
-            <div style="position:absolute;bottom:0px">
-                <li id="actionbar_switch">
-                    <a href="#" onclick="event.preventDefault(); document.getElementById('toggle-viewmode-form').submit();" 
-                       title="{{ __('ACTIONBAR/switch-todo-calendar/tooltip') }}" class="glyphicon glyphicon-check"></a>
-                    <form id="toggle-viewmode-form" action="{{ route('settings.toggle-viewmode') }}" method="POST" style="display: none;">
-                        @csrf
-                    </form>
+    <action-bar>
+        <div id="actionbar">
+            <div class="logo" onclick="window.location='{{ route('home') }}'" title="Quack!"></div>
+            <ul class="list-unstyled">
+                <li id="calendar">
+                    <a href="{{ route('calendar.index') }}" title="{{ __('COMMON/calendar/hdr') }}" class="glyphicon glyphicon-calendar"></a>
                 </li>
-                <li id="actionbar_autodlstatus">
-                    <a href="#" title="{{ __('COMMON/auto-download-status/hdr') }}" class="glyphicon glyphicon-list"
-                       data-sidepanel-show="{{ route('autodlstatus.index') }}"></a>
+                <li id="favorites">
+                    <a data-serieslist-show="{{ route('series.index') }}" title="{{ __('COMMON/favorites/hdr') }}" class="glyphicon glyphicon-heart"></a>
                 </li>
-                <li id="actionbar_settings">
-                    <a href="#" title="{{ __('COMMON/settings/hdr') }}" class="glyphicon glyphicon-cog"
-                       data-sidepanel-show="{{ route('settings.index') }}"></a>
+                <li id="add_favorites">
+                    <a data-seriesadding-show="{{ route('search.index') }}" title="{{ __('SERIESLIST/TOOLS/FAVORITES/addshow-show/glyph') }}" class="glyphicon glyphicon-plus"></a>
                 </li>
-                <li id="actionbar_about">
-                     <a href="#" title="{{ __('COMMON/about/hdr') }}" class="glyphicon glyphicon-info-sign"
-                        data-sidepanel-show="{{ route('about.index') }}"></a>
+                <li id="wl">
+                    <a href="{{ route('watchlist.index') }}" title="{{ __('ACTIONBAR/watchlist/tooltip') }}" class="glyphicon glyphicon-facetime-video"></a>
                 </li>
-            </div>
-        </ul>
-    </div>
+                <li id="actionbar_search">
+                    <a href="{{ route('torrents.search-dialog') }}" title="{{ __('TORRENTDIALOG/search-download-any/tooltip') }}" class="glyphicon glyphicon-download" data-torrent-search-show></a>
+                </li>
+                <li id="actionbar_subtitles">
+                    <a href="{{ route('subtitles.index') }}" title="{{ __('COMMON/find-subtitle/lbl') }}" class="glyphicon glyphicon-text-width" data-subtitles-search-show></a>
+                </li>
+                {{-- TorrentClientComposer injects $activeClient and $clientClass --}}
+                <li id="actionbar_torrent">
+                    <a href="#" title="{{ $activeClient ? $activeClient->getName() : 'DuckieTorrent' }}" class="glyphicon {{ $clientClass }}"
+                       data-sidepanel-show="{{ route('torrents.index') }}"></a>
+                </li>
+                <div class="actionbar-bottom">
+                    <li id="actionbar_switch">
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('toggle-viewmode-form').submit();" 
+                           title="{{ __('ACTIONBAR/switch-todo-calendar/tooltip') }}" class="glyphicon glyphicon-check"></a>
+                        <form id="toggle-viewmode-form" action="{{ route('settings.toggle-viewmode') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
+                    </li>
+                    <li id="actionbar_autodlstatus">
+                        <a href="#" title="{{ __('COMMON/auto-download-status/hdr') }}" class="glyphicon glyphicon-list"
+                           data-sidepanel-show="{{ route('autodlstatus.index') }}"></a>
+                    </li>
+                    <li id="actionbar_settings">
+                        <a href="#" title="{{ __('COMMON/settings/hdr') }}" class="glyphicon glyphicon-cog"
+                           data-sidepanel-show="{{ route('settings.index') }}"></a>
+                    </li>
+                    <li id="actionbar_about">
+                         <a href="#" title="{{ __('COMMON/about/hdr') }}" class="glyphicon glyphicon-info-sign"
+                            data-sidepanel-show="{{ route('about.index') }}"></a>
+                    </li>
+                </div>
+            </ul>
+        </div>
+    </action-bar>
 
-    <!-- NATIVE_SIDEBAR_PARTIAL_LOADED -->
     @include('partials._side_panel')
 
-    {{-- Original DuckieTV Query Monitor --}}
     <div class="query-monitor" id="query-monitor">
         <i class="glyphicon glyphicon-info-sign"></i>
         <span>{{ __('QUERYMONITOR/updating-data/lbl') }}</span>:
@@ -124,20 +124,6 @@
     </div>
 
     @include('partials._restore_progress_templates')
-
-    {{-- Template for Toast notifications (if needed later) --}}
-    <template id="toast-template">
-        <div class="toast">
-            <span class="toast-message"></span>
-        </div>
-    </template>
-
-    <div class="windowChrome">
-        <button id="minimize" title="Minimize">—</button>
-        <button id="maximize" title="Maximize">☐</button>
-        <button id="unmaximize" title="Restore" style="display:none">❐</button>
-        <button id="close" title="Close">✕</button>
-    </div>
 
     <!-- Standalone scripts (no build system) -->
     <script src="{{ asset('js/NativeWindow.js') }}"></script>
@@ -152,7 +138,7 @@
     <script src="{{ asset('js/Subtitles.js') }}"></script>
 
     {{-- Trakt Trending Overlay --}}
-    <div id="trakt-trending-overlay" class="overlay-panel">
+    <div id="trakt-trending-overlay" class="overlay-panel" style="display:none">
         <div class="overlay-header">
             <h2>{{ __('COMMON/addtrending/hdr') }}</h2>
             <button class="close-overlay">&times;</button>
@@ -165,14 +151,17 @@
     <script src="{{ asset('js/PollingService.js') }}"></script>
     <script src="{{ asset('js/Modal.js') }}"></script>
     <script src="{{ asset('js/BackupRestore.js') }}"></script>
+    <script src="{{ asset('js/Panels.js') }}"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             console.log('App: DOMContentLoaded');
             window.SidePanel = new SidePanel();
-            @if(isset($sidePanelUrl))
-                window.SidePanel.show('{{ $sidePanelUrl }}');
-            @endif
+            window.Panels = new Panels({
+                libraryRoute: '{{ route('series.index') }}'
+            });
+            TorrentSearch.init();
+            Subtitles.init();
             window.Calendar = new DuckieCalendar();
             window.BackgroundRotator = new BackgroundRotator({
                 route: '{{ route('background.random') }}'

@@ -10,9 +10,13 @@
         target: null,
 
         init() {
-            document.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
-            document.addEventListener('click', () => this.hide());
-            window.addEventListener('scroll', () => this.hide());
+            // Scope to series-list: serieheaders only appear there
+            const seriesList = document.querySelector('series-list');
+            const target = seriesList || document;
+            target.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
+            // Click/scroll dismiss are attached only while menu is open (see show/hide)
+            this._dismissClick = () => this.hide();
+            this._dismissScroll = () => this.hide();
         },
 
         handleContextMenu(e) {
@@ -28,6 +32,8 @@
 
         show(x, y) {
             this.hide();
+            document.addEventListener('click', this._dismissClick);
+            window.addEventListener('scroll', this._dismissScroll);
 
             const serieId = this.target.getAttribute('data-serie-id');
             const serieName = this.target.getAttribute('data-serie-name');
@@ -91,6 +97,8 @@
             if (this.menu) {
                 this.menu.remove();
                 this.menu = null;
+                document.removeEventListener('click', this._dismissClick);
+                window.removeEventListener('scroll', this._dismissScroll);
             }
         },
 
