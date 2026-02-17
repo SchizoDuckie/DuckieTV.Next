@@ -1,14 +1,5 @@
-{{--
-    Episode Detail View — Left Panel
-
-    Shows full episode information with action buttons. Loaded into the
-    sidepanel left panel when clicking an episode on the calendar (via
-    data-sidepanel-show) or from the episodes list (via data-sidepanel-update).
-
-    Matched to original DuckieTV-angular templates/sidepanel/episode-details.html
---}}
-<div class="serie-bg-img" style="background-image: url('{{ $serie->poster }}');"></div>
-<div class="serie-overview">
+<div class="leftpanel serie-overview">
+  <div class="serie-bg-img" style="background-image: url('{{ $serie->poster }}');"></div>
   <button type="button" class="close" data-sidepanel-show="{{ route('series.show', $serie->id) }}" title="{{ __('Close') }} {{ $serie->name }}{{ $episode->formatted_episode ? ' - ' : '' }}{{ $episode->formatted_episode }}" data-toggle="tooltip" data-placement="left">&times;</button>
   
   @if($episode->filename)
@@ -144,12 +135,13 @@
     @if(settings('torrenting.enabled') && ($episode->hasAired() || $episode->isLeaked()))
     <tr>
       <td colspan="2" class="buttons">
-        <a href="javascript:void(0)" onclick="window.Toast.info('Subtitle search not implemented yet.')">
-            <i class="glyphicon glyphicon-text-width"></i><strong>{{ __('Find Subtitle') }}</strong>
+        <a href="javascript:void(0)" onclick="Subtitles.search({{ $episode->id }})">
+            <i class="glyphicon glyphicon-text-width"></i><strong>{{ __('COMMON/find-subtitle/lbl') }}</strong>
         </a>
       </td>
     </tr>
     @endif
   </table>
 </div>
+<div class="rightpanel"></div>
 

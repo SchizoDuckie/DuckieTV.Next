@@ -80,3 +80,31 @@ Route::prefix('settings')->group(function () {
 });
 
 Route::post('/settings/toggle-viewmode', [CalendarController::class , 'toggleViewMode'])->name('settings.toggle-viewmode');
+
+// NativePHP Window Controls
+Route::prefix('native/window')->group(function () {
+    Route::post('/close', function () {
+        \Native\Desktop\Facades\Window::hide();
+    })->name('native.window.close');
+
+    Route::post('/minimize', function () {
+        \Native\Desktop\Facades\Window::minimize();
+    })->name('native.window.minimize');
+
+    Route::post('/maximize', function () {
+        \Native\Desktop\Facades\Window::maximize();
+    })->name('native.window.maximize');
+
+    Route::post('/unmaximize', function () {
+        // NativePHP doesn't have a direct 'unmaximize' but we can restore to a default or last known size if needed.
+        // However, usually maximize/unmaximize is a toggle.
+        // If we want to restore, we might need a specific size or last known.
+        // For now, let's just use resize if we really want to forced 'unmaximize'
+        \Native\Desktop\Facades\Window::resize(1280, 800);
+    })->name('native.window.unmaximize');
+});
+
+// Subtitles
+Route::get('/subtitles', [\App\Http\Controllers\SubtitlesController::class, 'index'])->name('subtitles.index');
+Route::post('/subtitles/search', [\App\Http\Controllers\SubtitlesController::class, 'search'])->name('subtitles.search');
+Route::post('/subtitles/search-query', [\App\Http\Controllers\SubtitlesController::class, 'searchByQuery'])->name('subtitles.search-query');

@@ -10,7 +10,13 @@
 
     <div class="series-grid" style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 20px; padding: 0 20px;">
         @foreach($series as $show)
-            <div class="serieheader" style="width: 165px; cursor: pointer;" data-sidepanel-show="{{ route('series.show', $show->id) }}">
+            <div class="serieheader" 
+                 style="width: 165px; cursor: pointer;" 
+                 data-sidepanel-show="{{ route('series.show', $show->id) }}"
+                 data-serie-id="{{ $show->id }}"
+                 data-serie-name="{{ $show->name }}"
+                 data-display-calendar="{{ $show->displaycalendar ? '1' : '0' }}"
+            >
                 <div class="poster" style="height: 236px; width: 165px; position: relative; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; background: #222;" title="{{ $show->name }}">
                     @if($show->poster)
                         <img src="{{ $show->poster }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ $show->name }}">

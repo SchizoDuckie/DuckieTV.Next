@@ -162,8 +162,8 @@ class GenericSearchEngine implements SearchEngineInterface
             $seeders = $this->getPropertyForSelector($node, $selectors['seeders']);
             $leechers = $this->getPropertyForSelector($node, $selectors['leechers']);
 
-            $seeders = (int) str_replace(',', '', $seeders ?? '1');
-            $leechers = (int) str_replace(',', '', $leechers ?? '0');
+            $seeders = (int) preg_replace('/[^0-9]/', '', $seeders ?? '0');
+            $leechers = (int) preg_replace('/[^0-9]/', '', $leechers ?? '0');
 
             $out = [
                 'releasename' => trim($releasename),

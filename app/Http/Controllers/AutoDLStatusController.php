@@ -31,7 +31,7 @@ class AutoDLStatusController extends Controller
 
         return view('layouts.app', [
             'title' => 'Auto-Download Status',
-            'view' => 'autodlstatus.index',
+            'sidePanelUrl' => route('autodlstatus.index'),
             'activityList' => $activityList
         ]);
     }

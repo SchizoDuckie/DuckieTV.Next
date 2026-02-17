@@ -144,6 +144,7 @@ body {
   font-family: helvetica, sans-serif;
   color: #444;
   transition: all 0.5s ease-in-out;
+  user-select: none;
 }
 
 body.modal-open .sidepanel,
@@ -197,6 +198,25 @@ textarea {
 p,
 span {
   cursor: default;
+}
+
+.context-menu {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.context-menu .dropdown-menu {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 180px;
+}
+
+.context-menu .dropdown-menu li a.text-danger {
+  color: #d9534f !important;
+}
+
+.context-menu .dropdown-menu li a.text-danger:hover {
+  background-color: #d9534f !important;
+  color: white !important;
 }
 
 h1,
@@ -284,6 +304,25 @@ a:hover .glyphicon {
 .standalone .windowChrome {
   display: block;
 }
+
+body.standalone {
+  -webkit-app-region: drag;
+}
+
+body.standalone button,
+body.standalone a,
+body.standalone i,
+body.standalone input,
+body.standalone select,
+body.standalone textarea,
+body.standalone [contenteditable],
+body.standalone .logo,
+body.standalone .glyphicon,
+body.standalone .clickable,
+body.standalone .no-drag {
+  -webkit-app-region: no-drag;
+}
+
 
 background-rotator .background-image-container {
   opacity: 0.4;
@@ -1065,7 +1104,7 @@ body.sidepanelActive {
 }
 
 .sidepanelActive .sidepanel.wide {
-    width: 840px;
+  width: 840px;
 }
 
 .sidepanelActive .sidepanel.wide+series-list>div,
@@ -3299,4 +3338,112 @@ ng-dial-gauge {
 
 .tray.tray-violet {
   background-image: url('../img/logo/icon64-violet.png');
+}
+
+/* Subtitles Overlay */
+.subtitles-overlay {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  max-height: 80vh;
+  background: rgba(20, 20, 20, 0.98);
+  color: #eee;
+  z-index: 10000;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+  border: 1px solid #444;
+  border-top: 3px solid #00acee;
+  border-radius: 4px;
+  display: none;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.subtitles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+}
+
+.subtitles-header h3 {
+  margin: 0;
+  font-family: 'bebasregular';
+  font-size: 24px;
+}
+
+.subtitles-header button {
+  background: none;
+  border: none;
+  color: #eee;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.subtitles-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.subtitles-table th {
+  text-align: left;
+  font-family: 'bebaslight';
+  font-size: 16px;
+  color: #999;
+}
+
+.subtitles-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid #333;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.subtitles-table .lang {
+  font-weight: bold;
+  color: #00acee;
+}
+
+.subtitles-table .release {
+  max-width: 200px;
+}
+
+.release-name {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.uploader {
+  display: block;
+  color: #777;
+  font-size: 11px;
+}
+
+.subtitles-table td .btn {
+  padding: 2px 6px;
+}
+
+.subtitles-search-box {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.subtitles-search-box input {
+  flex: 1;
+  background: #222;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #999;
 }

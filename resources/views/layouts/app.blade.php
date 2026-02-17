@@ -26,89 +26,8 @@
         sidepanel, background-rotator {
             display: block;
         }
-
-        /* Watchlist Easter Egg */
-        #wl {
-            display: none !important;
-        }
-        body.kc #wl {
-            display: block !important;
-        }
-        /* Trakt Trending Overlay */
-        .overlay-panel {
-            position: fixed;
-            top: -100%;
-            left: 0;
-            right: 0;
-            height: 90vh; /* Drops down to cover most of the screen */
-            background: rgba(20, 22, 24, 0.95);
-            z-index: 2000;
-            transition: top 0.3s ease-in-out;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            padding: 20px;
-            color: #fff;
-            overflow-y: auto;
-        }
-        .overlay-panel.active {
-            top: 0;
-        }
-        .overlay-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 10px;
-        }
-        .overlay-header h2 { margin: 0; font-family: 'bebasbold'; }
-        .close-overlay {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 30px;
-            cursor: pointer;
-        }
-        .close-overlay:hover { color: #d9534f; }
     </style>
     @stack('styles')
-    <style>
-        /* Trakt Trending Overlay */
-        .overlay-panel {
-            position: fixed;
-            top: -100%;
-            left: 0;
-            right: 0;
-            height: 90vh; /* Drops down to cover most of the screen */
-            background: rgba(20, 22, 24, 0.95);
-            z-index: 2000;
-            transition: top 0.3s ease-in-out;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            padding: 20px;
-            color: #fff;
-            overflow-y: auto;
-        }
-        .overlay-panel.active {
-            top: 0;
-        }
-        .overlay-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 10px;
-        }
-        .overlay-header h2 { margin: 0; font-family: 'bebasbold'; }
-        .close-overlay {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 30px;
-            cursor: pointer;
-        }
-        .close-overlay:hover { color: #d9534f; }
-        
-    </style>
 </head>
 <body class="{{ app(\App\Services\SettingsService::class)->get('kc.always', false) ? 'kc' : '' }}">
     <background-rotator>
@@ -155,6 +74,10 @@
             <li id="actionbar_search">
                 <a href="#" title="{{ __('TORRENTDIALOG/search-download-any/tooltip') }}" class="glyphicon glyphicon-download"
                    onclick="TorrentSearch.open('{{ route('torrents.search-dialog') }}'); return false;"></a>
+            </li>
+            <li id="actionbar_subtitles">
+                <a href="#" title="{{ __('COMMON/find-subtitle/lbl') }}" class="glyphicon glyphicon-text-width"
+                   onclick="Subtitles.search(); return false;"></a>
             </li>
             {{-- TorrentClientComposer injects $activeClient and $clientClass --}}
             <li id="actionbar_torrent">
@@ -209,7 +132,16 @@
         </div>
     </template>
 
+    <div class="windowChrome">
+        <button id="minimize" title="Minimize">—</button>
+        <button id="maximize" title="Maximize">☐</button>
+        <button id="unmaximize" title="Restore" style="display:none">❐</button>
+        <button id="close" title="Close">✕</button>
+    </div>
+
     <!-- Standalone scripts (no build system) -->
+    <script src="{{ asset('js/NativeWindow.js') }}"></script>
+    <script src="{{ asset('js/ContextMenu.js') }}"></script>
     <script src="{{ asset('js/Toast.js') }}"></script>
     <script src="{{ asset('js/QueryMonitor.js') }}"></script>
     <script src="{{ asset('js/SidePanel.js') }}"></script>
@@ -217,6 +149,7 @@
     <script src="{{ asset('js/BackgroundRotator.js') }}"></script>
     <script src="{{ asset('js/TorrentSearch.js') }}"></script>
     <script src="{{ asset('js/TraktTrending.js') }}"></script>
+    <script src="{{ asset('js/Subtitles.js') }}"></script>
 
     {{-- Trakt Trending Overlay --}}
     <div id="trakt-trending-overlay" class="overlay-panel">
@@ -237,7 +170,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('App: DOMContentLoaded');
             window.SidePanel = new SidePanel();
-            window.Calendar = new Calendar();
+            @if(isset($sidePanelUrl))
+                window.SidePanel.show('{{ $sidePanelUrl }}');
+            @endif
+            window.Calendar = new DuckieCalendar();
             window.BackgroundRotator = new BackgroundRotator({
                 route: '{{ route('background.random') }}'
             });

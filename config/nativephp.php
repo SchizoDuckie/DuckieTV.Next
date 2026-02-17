@@ -39,7 +39,7 @@ return [
     /**
      * The description of your application.
      */
-    'description' => env('NATIVEPHP_APP_DESCRIPTION', 'DuckieTV - Your personal TV Show tracker and torrent manager'),
+    'description' => env('NATIVEPHP_APP_DESCRIPTION', 'DuckieTV - Your personal TV Show tracker'),
 
     /**
      * The Website of your application.

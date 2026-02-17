@@ -169,8 +169,8 @@ DuckieTV.Next/
 | TMDB Integration | `TMDBService.js` | `App\Services\TMDBService` | ✅ Done |
 | AutoDownloadService | `AutoDownloadService.js` (418 lines) | `App\Jobs\AutoDownloadJob` | ✅ Done |
 | TraktTV Updates | `TraktTVUpdateService.js` (125 lines) | `App\Jobs\TraktUpdateJob` | ✅ Done |
-| SceneNameResolver | `SceneNameResolver.js` | — | ❌ Not ported |
-| WatchlistService | `WatchlistService.js` | — | ❌ Not ported |
+| SceneNameResolver | `SceneNameResolver.js` | `App\Services\SceneNameResolverService` | ✅ Done |
+| WatchlistService | `WatchlistService.js` | `App\Services\WatchlistService` | ✅ Done |
 | WatchlistCheckerService | `WatchlistCheckerService.js` | — | ❌ Not ported |
 | NotificationService | `NotificationService.js` | — | ❌ Not ported |
 
@@ -209,11 +209,11 @@ DuckieTV.Next/
 | **Series details** | multiple templates | 6 Blade views | ✅ Done |
 | **Torrent details** | `torrentClientDetails.html` | `torrents/show.blade.php` | ✅ Done |
 | **Fast Search** | `fastSearch.js` (389 lines) | — | ❌ Not ported |
-| **Action Bar** | `actionBar.js` (~80 lines) | Blade partial | ⚠️ Partial |
-| **Subtitle Dialog** | `subtitleDialog.js` (137 lines) | — | ❌ Not ported |
-| **Episode watched/downloaded toggles** | directives (~40 lines each) | — | ❌ Not ported |
-| **About page** | `about.html` | — | ❌ Not ported |
-| **Auto-download status page** | `autodlstatus.html` | — | ❌ Not ported |
+| **Action Bar** | `actionBar.js` (~80 lines) | Blade partial | ✅ Done |
+| **Subtitle Dialog** | `subtitleDialog.js` (137 lines) | `SubtitlesService` + `SubtitlesController` + Views | ✅ Done |
+| **Episode watched/downloaded toggles** | directives (~40 lines each) | `EpisodeController` + Blade | ✅ Done |
+| **About page** | `about.html` | `about/index.blade.php` | ✅ Done |
+| **Auto-download status page** | `autodlstatus.html` | `autodlstatus/index.blade.php` | ✅ Done |
 | **Internationalization** | 20 locale JSON files | `lang/` directory | ✅ Done — 20 languages |
 | **Toast notifications** | — | `Toast.js` | ✅ Done (new) |
 | **Query monitor** | — | `QueryMonitor.js` | ✅ Done (new, dev only) |

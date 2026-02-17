@@ -1,10 +1,11 @@
-    <div ng-controller="SettingsTorrentCtrl" class="buttons">
+    <div class="buttons" data-section="torrent-search">
         <!-- Default Provider -->
         <h2 translate-once>{{ __('SETTINGS/TORRENT-SEARCH/default-provider/hdr') }}</h2>
         <p style='text-align:left;white-space:normal'>{{ __('SETTINGS/TORRENT-SEARCH/default-provider/desc') }}</p>
 
+        @inject('torrentSearchService', 'App\Services\TorrentSearchService')
         @php
-            $providers = ['ThePirateBay', 'KickassTorrents', 'Strike', 'RarBG', 'IsoHunt', '1337x', 'LimeTorrents', 'Zooqle', 'TorrentDownload', 'EZTV', 'YTS'];
+            $providers = array_keys($torrentSearchService->getSearchEngines());
             $currentProvider = settings('torrenting.searchprovider', 'ThePirateBay');
         @endphp
 
@@ -169,35 +170,4 @@
 
     </div>
 
-    <!-- TODO: Move scripts to dedicated JS file -->
-    <script>
-        function setSearchProvider(provider) {
-             saveSetting('torrenting.searchprovider', provider).then(() => {
-                 location.reload(); // Simple reload for now to reflect state
-             });
-        }
-        function setSearchQuality(quality) {
-             saveSetting('torrenting.searchquality', quality).then(() => {
-                 location.reload();
-             });
-        }
-        function toggleSetting(key, value) {
-            saveSetting(key, value).then(() => {
-                location.reload();
-            });
-        }
-        function saveSetting(key, value) {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            return fetch('/settings/torrent-search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ [key]: value })
-            }).then(response => {
-                console.log('Saved', key, value);
-            });
-        }
-    </script>
+    <!-- Scripts moved to public/js/Settings.js -->

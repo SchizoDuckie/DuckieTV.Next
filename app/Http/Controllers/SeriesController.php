@@ -166,6 +166,8 @@ class SeriesController extends Controller
 
         if ($action === 'mark_watched') {
             $serie->markSerieAsWatched();
+        } elseif ($action === 'mark_downloaded') {
+            $serie->markSerieAsDownloaded();
         } elseif ($action === 'toggle_autodownload') {
             $serie->toggleAutoDownload();
         } elseif ($action === 'toggle_calendar') {

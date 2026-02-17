@@ -14,7 +14,7 @@ class UpdateTorrentSearchSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'torrenting.searchprovider' => 'string|in:ThePirateBay,KickassTorrents,Strike,RarBG,IsoHunt,1337x,LimeTorrents,Zooqle,TorrentDownload,EZTV,YTS',
+            'torrenting.searchprovider' => 'string|in:' . implode(',', array_keys(app(\App\Services\TorrentSearchService::class)->getSearchEngines())),
             'torrenting.gui_search_providers' => 'array', // For toggling providers in search
             'torrenting.global_size_min' => 'nullable|numeric|min:0',
             'torrenting.global_size_max' => 'nullable|numeric|min:0',

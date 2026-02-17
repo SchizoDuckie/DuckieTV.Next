@@ -1,4 +1,4 @@
-class Calendar {
+class DuckieCalendar {
     constructor() {
         console.log('Calendar: constructor');
         this.el = document.querySelector('calendar');

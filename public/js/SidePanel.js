@@ -12,6 +12,9 @@ class SidePanel {
     /**
      * Finds required DOM elements and initializes event listeners.
      */
+    /**
+     * Finds required DOM elements and initializes event listeners.
+     */
     constructor() {
         console.log('SidePanel: constructor');
         this.el = document.querySelector('sidepanel');
@@ -21,9 +24,10 @@ class SidePanel {
         }
 
         this.panel = this.el.querySelector('.sidepanel');
+        // Initial attempt to find panels, but they might not exist yet
         this.leftPanel = this.el.querySelector('.leftpanel');
         this.rightPanel = this.el.querySelector('.rightpanel');
-        this.closeBtn = this.el.querySelector('.close');
+        this.closeBtn = this.el.querySelector('.close'); // This might be inside a panel, so might be null initially
 
         console.log('SidePanel: initialized', this.el);
         this.init();
@@ -34,9 +38,12 @@ class SidePanel {
      * Uses delegation for elements loaded via AJAX.
      */
     init() {
-        if (this.closeBtn) {
-            this.closeBtn.addEventListener('click', () => this.hide());
-        }
+        // Global listener for close buttons (since they are dynamic)
+        this.el.addEventListener('click', (e) => {
+            if (e.target.closest('.close')) {
+                this.hide();
+            }
+        });
 
         // Global click listener for sidepanel triggers
         document.addEventListener('click', (e) => {
@@ -108,70 +115,55 @@ class SidePanel {
             options.leftClass = 'settings';
         }
 
-        // About and Torrents should trigger expanded behavior for 800px width parity
-        if (url.includes('/about') || url.includes('torrents')) {
-            return this.expand(url, options);
+        if (url.includes('/about') || url.includes('torrents') || url.includes('autodlstatus')) {
+            return this.expand(url, { ...options, fullWidth: true });
         }
 
         document.body.classList.add('sidepanelActive');
-        document.body.classList.remove('sidepanelExpanded');
+        if (!options.preserveState) {
+            document.body.classList.remove('sidepanelExpanded');
+        }
 
         try {
             const html = await this.fetch(url);
             this.setContent(html, 'left', options);
         } catch (error) {
-            if (this.leftPanel) {
-                this.leftPanel.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            }
+            this.panel.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
         }
     }
 
     /**
      * Shows the panel in its expanded state (both panels).
-     * Typically used for detailed metadata or seasonal episode lists.
      * @param {string} url The AJAX endpoint to load.
      */
     async expand(url, options = {}) {
         console.log('SidePanel: expand', url);
-        document.body.classList.add('sidepanelActive', 'sidepanelExpanded');
+        document.body.classList.add('sidepanelActive');
+        // We add sidepanelExpanded, but the CSS translation also depends on content structure
+        document.body.classList.add('sidepanelExpanded');
 
         if (url.includes('/settings')) {
             options.rightClass = 'settings';
+        }
+
+        if (!options.fullWidth && (url.includes('/about') || url.includes('torrents') || url.includes('autodlstatus'))) {
+            options.fullWidth = true;
         }
 
         try {
             const html = await this.fetch(url);
             this.setContent(html, 'right', options);
         } catch (error) {
-            if (this.rightPanel) {
-                this.rightPanel.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            }
+            this.panel.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
         }
     }
 
     /**
      * Updates the left panel content without changing expansion state.
-     * Used for master-detail navigation (e.g., clicking an episode
-     * in the right panel updates the left panel while keeping the
-     * episodes list visible on the right).
-     * @param {string} url The AJAX endpoint to load.
      */
     async update(url, options = {}) {
-        console.log('SidePanel: update', url);
-        document.body.classList.add('sidepanelActive');
-
-        if (url.includes('/settings')) {
-            options.leftClass = 'settings';
-        }
-
-        try {
-            const html = await this.fetch(url);
-            this.setContent(html, 'left', options);
-        } catch (error) {
-            if (this.leftPanel) {
-                this.leftPanel.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            }
-        }
+        // Same as show but keep the expanded state if active
+        this.show(url, { ...options, preserveState: true });
     }
 
     /**
@@ -181,67 +173,107 @@ class SidePanel {
         document.body.classList.remove('sidepanelActive', 'sidepanelExpanded');
         setTimeout(() => {
             if (!document.body.classList.contains('sidepanelActive')) {
-                if (this.leftPanel) this.leftPanel.innerHTML = '';
-                if (this.rightPanel) this.rightPanel.innerHTML = '';
+                this.panel.innerHTML = '';
+                this.leftPanel = null;
+                this.rightPanel = null;
             }
         }, 350);
     }
 
     /**
-     * Updates the HTML content of a specific panel.
-     * If html contains both panels, it updates both and manages expansion state.
+     * Updates the HTML content of the panel.
+     * Intelligently handles full-structure injection vs partial injection.
      * @param {string} html The raw HTML content.
      * @param {string} target The target panel ('left' or 'right').
      */
     setContent(html, target = 'left', options = {}) {
+        // Special Case: Full Width override (for About, Torrents, etc.)
+        if (options.fullWidth) {
+            this.panel.innerHTML = html;
+            // Update references just in case the new content HAS structure
+            this.leftPanel = this.panel.querySelector('.leftpanel');
+            this.rightPanel = this.panel.querySelector('.rightpanel');
+            return;
+        }
+
         const temp = document.createElement('div');
         temp.innerHTML = html;
 
-        const leftContent = temp.querySelector('.leftpanel');
-        const rightContent = temp.querySelector('.rightpanel');
+        const newLeft = temp.querySelector('.leftpanel');
+        const newRight = temp.querySelector('.rightpanel');
 
-        // Helper to sync classes from options
-        const syncClasses = () => {
-            if (options.leftClass && this.leftPanel) {
-                this.leftPanel.classList.add(options.leftClass);
-            }
-            if (options.rightClass && this.rightPanel) {
-                this.rightPanel.classList.add(options.rightClass);
-            }
-        };
+        // Refresh references in case they were added manually or via previous calls
+        this.leftPanel = this.panel.querySelector('.leftpanel');
+        this.rightPanel = this.panel.querySelector('.rightpanel');
 
-        // If the fragment contains explicit panel wrappers, sync them
-        if (leftContent || rightContent) {
-            if (leftContent && this.leftPanel) {
-                this.leftPanel.className = leftContent.className;
-                this.leftPanel.innerHTML = leftContent.innerHTML;
-            }
-            if (rightContent && this.rightPanel) {
-                this.rightPanel.className = rightContent.className;
-                this.rightPanel.innerHTML = rightContent.innerHTML;
-                if (rightContent.innerHTML.trim() !== '') {
-                    document.body.classList.add('sidepanelExpanded');
+        // Case 1: Incoming content has structure (Left or Right panel wrapper)
+        if (newLeft || newRight) {
+            // If we are injecting a full structure (e.g. from scratch or replacing full view)
+            // Or if we are targeting 'left' and the content HAS a left panel, we usually assume it's the main view.
+
+            // If the DOM currently has no structure, OR if we are updating the 'left' panel (primary view),
+            // convert to structured view.
+            if ((!this.leftPanel && !this.rightPanel) || target === 'left') {
+                // IMPROVEMENT: If preserving state, check if we can just replace the left panel
+                if (options.preserveState && this.rightPanel && newLeft && (!newRight || newRight.innerHTML.trim() === '')) {
+                    if (this.leftPanel) {
+                        this.leftPanel.replaceWith(newLeft);
+                    } else {
+                        // Should not happen if rightPanel exists, but prepend just in case
+                        this.panel.prepend(newLeft);
+                    }
+                    // Re-acquire reference
+                    this.leftPanel = this.panel.querySelector('.leftpanel');
                 } else {
-                    document.body.classList.remove('sidepanelExpanded');
+                    this.panel.innerHTML = html;
+                    this.leftPanel = this.panel.querySelector('.leftpanel');
+                    this.rightPanel = this.panel.querySelector('.rightpanel');
                 }
+            } else {
+                // We have structure, and we are updating 'right' (or strictly left?)
+                // ... logic same as before (which was mostly empty)
             }
-        } else {
-            // Otherwise inject into the intended target panel
-            const panel = (target === 'left') ? this.leftPanel : this.rightPanel;
-            if (panel) {
-                panel.innerHTML = html;
-                syncClasses();
+        }
+        // Case 2: Incoming content works with EXISTING structure (injecting into left/right)
+        else if (this.leftPanel || this.rightPanel) {
+            // We have a structure in DOM, and incoming content is "bare".
+            // Inject into the targeted panel.
+            if (target === 'left' && this.leftPanel) {
+                this.leftPanel.innerHTML = html;
+                if (options.leftClass) this.leftPanel.classList.add(options.leftClass);
+            } else if (target === 'right') {
+                if (!this.rightPanel) {
+                    console.log('SidePanel: Right panel missing for injection, creating it.');
+                    this.rightPanel = document.createElement('div');
+                    this.rightPanel.className = 'rightpanel';
+                    this.panel.appendChild(this.rightPanel);
+                }
+                this.rightPanel.innerHTML = html;
+                if (options.rightClass) this.rightPanel.classList.add(options.rightClass);
+            } else {
+                // Fallback: requested target doesn't exist?
+                console.warn(`SidePanel: Requested target '${target}' but panel not found.`);
             }
+        }
+        // Case 3: No structure in DOM, No structure in Content => Full Width (e.g. About)
+        else {
+            this.panel.innerHTML = html;
+            // No left/right references to set.
+        }
 
-            // If we injected into left and are NOT expanded, clear the right panel.
-            if (target === 'left' && !document.body.classList.contains('sidepanelExpanded')) {
-                if (this.rightPanel) {
-                    this.rightPanel.innerHTML = '';
-                    this.rightPanel.className = 'rightpanel'; // Reset
-                }
+        // Post-Injection checks
+        this.leftPanel = this.panel.querySelector('.leftpanel');
+        this.rightPanel = this.panel.querySelector('.rightpanel');
+
+        // Manage cleanups
+        if (target === 'left' && !document.body.classList.contains('sidepanelExpanded')) {
+            if (this.rightPanel) {
+                this.rightPanel.innerHTML = '';
+                this.rightPanel.className = 'rightpanel'; // Reset
             }
         }
     }
+
 
     /**
      * Trigger auto-download for an episode

@@ -115,3 +115,4 @@
         </tr>
     </table>
 </div>
+<div class="rightpanel"></div>

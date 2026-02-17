@@ -209,3 +209,125 @@ window.updateSidebarClient = function (newClientName) {
         window.SidePanel.update('/settings');
     }
 }
+
+// Global functions for Torrent Search Settings (moved from blade template)
+window.setSearchProvider = function (provider) {
+    window.updateTorrentSetting('torrenting.searchprovider', provider).then(() => {
+        // Manually update UI to avoid reloading panel (and cache issues)
+        const container = document.querySelector('[data-section="torrent-search"]');
+        if (container) {
+            const buttons = container.querySelectorAll('a[onclick^="setSearchProvider"]');
+            buttons.forEach(btn => {
+                const isMatch = btn.getAttribute('onclick').includes(`'${provider}'`);
+
+                // Update class
+                if (isMatch) {
+                    btn.classList.add('btn-success');
+                } else {
+                    btn.classList.remove('btn-success');
+                }
+
+                // Update Icon
+                const existingIcon = btn.querySelector('.glyphicon');
+                if (existingIcon) existingIcon.remove();
+
+                if (isMatch) {
+                    const icon = document.createElement('i');
+                    icon.className = 'glyphicon glyphicon-ok';
+                    btn.insertBefore(icon, btn.firstChild);
+                    // Verify strong positioning if needed, but CSS might handle it? 
+                    // The blade template used inline styles for positioning 'absolute', which is messy to replicate perfectly without more logic.
+                    // Let's just fix the class and icon presence 90% of the way.
+                    // The blade has: <strong style='position: {{ $currentProvider == $provider ? "absolute; left: 60px" : "" }}'>
+                    const strong = btn.querySelector('strong');
+                    if (strong) strong.style.cssText = 'position: absolute; left: 60px';
+                } else {
+                    const strong = btn.querySelector('strong');
+                    if (strong) strong.style.cssText = '';
+                }
+            });
+        }
+    }).catch(error => {
+        console.error('Failed to set search provider:', error);
+        alert('Failed to set search provider: ' + (error.message || 'Unknown error'));
+    });
+}
+
+window.setSearchQuality = function (quality) {
+    window.updateTorrentSetting('torrenting.searchquality', quality).then(() => {
+        const container = document.querySelector('[data-section="torrent-search"]');
+        if (container) {
+            const buttons = container.querySelectorAll('a[onclick^="setSearchQuality"]');
+            buttons.forEach(btn => {
+                // quality can be empty string for 'All'
+                // onclick="setSearchQuality('')" vs onclick="setSearchQuality('FullHD')"
+                const isMatch = btn.getAttribute('onclick') === `setSearchQuality('${quality}')`;
+
+                if (isMatch) {
+                    btn.classList.add('btn-success');
+                } else {
+                    btn.classList.remove('btn-success');
+                }
+
+                const existingIcon = btn.querySelector('.glyphicon');
+                if (existingIcon) existingIcon.remove();
+
+                const strong = btn.querySelector('strong');
+
+                if (isMatch) {
+                    const icon = document.createElement('i');
+                    icon.className = 'glyphicon glyphicon-ok';
+                    btn.insertBefore(icon, btn.firstChild);
+                    if (strong) strong.style.paddingLeft = '30px';
+                } else {
+                    if (strong) strong.style.paddingLeft = '0';
+                }
+            });
+        }
+    }).catch(error => {
+        console.error('Failed to set search quality:', error);
+        alert('Failed to set search quality: ' + (error.message || 'Unknown error'));
+    });
+}
+
+// Reuse toggleSetting for generic settings if needed, but here we specifically map to torrent settings for now
+// or use a generic saveSetting if available. The blade template used 'saveSetting' locally defined.
+// taking 'toggleSetting' from the blade:
+window.toggleSetting = function (key, value) {
+    // The blade template used saveSetting('torrenting.requirekeywordsmode', ...) which calls /settings/torrent-search
+    // accessible via updateTorrentSetting (which posts to /settings/torrent -> TorrentController updates via SettingsService)
+    // Wait, the blade posted to /settings/torrent-search.
+    // Let's see if updateTorrentSetting posts to /settings/torrent.
+    // The blade's saveSetting posted to /settings/torrent-search.
+    // The SettingsController maps /settings/{section} to update().
+    // So posting to /settings/torrent-search updates settings passed in body.
+
+    // We can use Settings.save() style or just fetch directly.
+    // Let's use a generic helper consistent with updateTorrentSetting but targeting the section if needed.
+    // Actually updateTorrentSetting targets /settings/torrent.
+    // The search settings are in 'torrent-search' section but stored in same SettingsService.
+    // So /settings/torrent or /settings/torrent-search both work if they use SettingsService.
+
+    window.updateTorrentSetting(key, value).then(() => {
+        if (window.SidePanel && document.querySelector('[data-section="torrent-search"]')) {
+            window.SidePanel.expand('/settings/torrent-search');
+        } else {
+            window.location.reload();
+        }
+    }).catch(error => {
+        console.error('Failed to toggle setting:', error);
+        alert('Failed to toggle setting: ' + (error.message || 'Unknown error'));
+    });
+}
+
+// Also map saveSetting used in blade to updateTorrentSetting for consistency
+window.saveSetting = function (key, value) {
+    return window.updateTorrentSetting(key, value).then(() => {
+        if (window.SidePanel && document.querySelector('[data-section="torrent-search"]')) {
+            window.SidePanel.expand('/settings/torrent-search');
+        }
+    }).catch(error => {
+        console.error('Failed to save setting:', error);
+        alert('Failed to save setting: ' + (error.message || 'Unknown error'));
+    });
+}

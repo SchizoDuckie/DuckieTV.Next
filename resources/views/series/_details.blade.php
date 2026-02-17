@@ -14,8 +14,8 @@
     @see templates/sidepanel/serie-overview.html in DuckieTV-angular
     @see serieSidepanelCtrl in DuckieTV-angular/js/controllers/sidepanel/
 --}}
+<div class="leftpanel serie-overview">
 <div class="serie-bg-img" style="background-image: url('{{ $serie->poster }}');"></div>
-
 <button type="button" class="close" onclick="window.SidePanel.hide()" title="Close {{ $serie->name }}">&times;</button>
 
 <h2>
@@ -186,3 +186,5 @@
         </tr>
     </tbody>
 </table>
+</div>
+<div class="rightpanel"></div>
